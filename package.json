@@ -1,0 +1,35 @@
+{
+  "name": "@hexaonelabs/web3connect",
+  "private": false,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --p ./tsconfig-build.json && vite build",
+    "preview": "vite preview",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@types/crypto-js": "^4.2.2",
+    "glob": "^10.3.12",
+    "typescript": "^5.2.2",
+    "vite": "^5.2.6",
+    "vite-plugin-dts": "^3.8.1",
+    "vite-plugin-lib-inject-css": "^2.0.1"
+  },
+  "dependencies": {
+    "buffer": "^6.0.3",
+    "crypto-js": "^4.2.0",
+    "crypto-random-string": "^5.0.0",
+    "ethers": "^5.7.2",
+    "firebase": "^10.10.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ]
+}
