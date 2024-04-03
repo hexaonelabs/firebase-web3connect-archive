@@ -1,37 +1,28 @@
-import html from './dialogElement.html?raw';
-import css from './dialogElement.css?raw';
+import html from "./dialogElement.html?raw";
+import css from "./dialogElement.css?raw";
 
 // export web component with shadowdom
 class HexaSigninDialogElement extends HTMLElement {
   constructor() {
     super();
-    const isLightMode = Boolean(this.getAttribute("light-mode"));
     const integrator = this.getAttribute("integrator")
-      ? 'Sign in to' + this.getAttribute("integrator")
-      : 'Sign in using HexaConnect';
-    console.log("isLightMode", isLightMode)
+      ? "Sign in to" + this.getAttribute("integrator")
+      : "Sign in using HexaConnect";
     const shadow = this.attachShadow({ mode: "open" });
     if (!shadow) {
       throw new Error("ShadowDOM not supported");
     }
-
-    // add `theme` attribute to component
-    this.setAttribute("theme", isLightMode ? "light" : "dark");
-
+    // create template element
     const template = document.createElement("template");
     // set background color from prefers-color-scheme
     template.innerHTML = `
-      <style>
-        ${css}
-      </style>
+      <style>${css}</style>
       ${html}
     `;
     // add shadow dom to element
     shadow.appendChild(template.content.cloneNode(true));
     // replace tags from html with variables
-    const variables = [
-      { tag: "integrator", value: integrator },
-    ];
+    const variables = [{ tag: "integrator", value: integrator }];
     variables.forEach((variable) => {
       shadow.innerHTML = shadow.innerHTML.replace(
         new RegExp(`{{${variable.tag}}}`, "g"),
@@ -67,14 +58,14 @@ class HexaSigninDialogElement extends HTMLElement {
                 detail: "connect-google",
               })
             );
-          break;
+            break;
           case "connect-email":
             this.dispatchEvent(
               new CustomEvent("connect", {
                 detail: "connect-email",
               })
             );
-          break;
+            break;
         }
       });
   }

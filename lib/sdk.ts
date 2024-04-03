@@ -88,9 +88,7 @@ export class HexaConnect {
         if (!dialogElement) {
           document.body.insertAdjacentHTML(
             "beforeend",
-            isLightMode
-              ? `<hexa-signin-dialog id="hexa-wallet-connectWithUI-dialog" light-mode="${isLightMode}" />`
-              : `<hexa-signin-dialog id="hexa-wallet-connectWithUI-dialog" />`
+            `<hexa-signin-dialog id="hexa-wallet-connectWithUI-dialog" theme="${isLightMode ? 'light' : 'dark'}" />`
           );
           dialogElement = document.querySelector(
             "hexa-signin-dialog"
