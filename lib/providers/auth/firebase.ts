@@ -2,7 +2,20 @@
 import { FirebaseOptions, initializeApp } from 'firebase/app';
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
-import { getAuth, GoogleAuthProvider, signInWithPopup, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, Auth} from 'firebase/auth';
+import { 
+  getAuth, 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  sendSignInLinkToEmail, 
+  isSignInWithEmailLink, 
+  signInWithEmailLink, 
+  signInAnonymously,
+  signOut as signOutFormFirebase,
+  Auth,
+  onAuthStateChanged as onAuthStateChangedFirebase,
+  User,
+} from 'firebase/auth';
+import { IAuthProvider } from '../../interfaces/auth-provider.interface';
 
 let auth!: Auth;
 
@@ -75,6 +88,24 @@ const signInWithLink = async ()=> {
   }
 }
 
+const signInAsAnonymous = async () => {
+  try {
+    const credential = await signInAnonymously(auth);
+    return credential;
+  } catch (error) {
+    throw error;
+  }
+
+}
+
+const signOut = async () => {
+  try {
+    await signOutFormFirebase(auth);
+  } catch (error) {
+    throw error;
+  }
+}
+
 const initialize = (firebaseConfig: FirebaseOptions) => {
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
@@ -82,10 +113,22 @@ const initialize = (firebaseConfig: FirebaseOptions) => {
   auth = getAuth(app);
 }
 
-export {
-  auth, 
+const getOnAuthStateChanged = (cb: (user: User|null) => void) => onAuthStateChangedFirebase(auth, user => cb(user));
+
+const getCurrentUserAuth = async () => {
+  return auth.currentUser;
+}
+
+const FirebaseAuthProvider: IAuthProvider<FirebaseOptions> = {
   signinWithGoogle,
   sendLinkToEmail,
   signInWithLink,
+  signInAsAnonymous,
+  signOut,
+  getOnAuthStateChanged,
+  getCurrentUserAuth,
   initialize,
 }
+
+export default FirebaseAuthProvider;
+

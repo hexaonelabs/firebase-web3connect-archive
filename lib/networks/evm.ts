@@ -110,3 +110,39 @@ export const generateEvmAddress = (
     provider,
   };
 };
+
+export const connectWithExternalWallet = async () => {
+  // check if metamask is installed
+  if (!(window as any).ethereum) {
+    throw new Error(`
+      No web3 wallet extension found. 
+      Install browser extensions like Metamask or Rabby wallet to connect with the app using your existing or hardware wallet.
+    `);
+  }
+  // get current account
+  const web3Provider = new providers.Web3Provider(
+    (window as any).ethereum
+  );
+  const accounts = await web3Provider.send('eth_requestAccounts', []);
+  console.log(`[INFO] connectWithExternalWallet: `, accounts);
+  // set to default chain
+  try {
+    const chainIdAsHex = '0x' + CHAIN_DEFAULT.id.toString(16);
+    await web3Provider.send('wallet_switchEthereumChain', [{ chainId: chainIdAsHex }]);
+  } catch (error: unknown) {
+    console.log('[ERROR]', error);
+  }
+  const signer = web3Provider?.getSigner();
+  const address = await signer.getAddress();
+  const chainId = await signer.getChainId();
+  const ethrDid = generateDID(address);
+  console.log('[INFO] connectWithExternalWallet', { accounts, address, chainId });
+
+  return {
+    privateKey: null,
+    publicKey: null,
+    address,
+    did: ethrDid,
+    provider: web3Provider,
+  };
+};

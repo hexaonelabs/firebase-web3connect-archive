@@ -1,5 +1,6 @@
 import { providers, getDefaultProvider } from "ethers";
 import {
+  connectWithExternalWallet,
   decrypt,
   encrypt,
   generateEvmAddress,
@@ -7,7 +8,7 @@ import {
   signMessage,
   verifySignature,
 } from "./networks/evm";
-import { signinWithGoogle, auth, sendLinkToEmail, signInWithLink, initialize as initFirebase } from "./providers/auth/firebase";
+import authProvider from "./providers/auth/firebase";
 import "./ui/dialog-element/dialogElement";
 import { HexaSigninDialogElement } from "./ui/dialog-element/dialogElement";
 import { FirebaseOptions } from "firebase/app";
@@ -44,7 +45,7 @@ export class HexaConnect {
   ) {
     this._apiKey = this._parseApiKey(apiKey.slice(2));
     this._ops = ops;
-    initFirebase(this._apiKey);
+    authProvider.initialize(this._apiKey);
     // check if window is available and HTMLDialogElement is supported
     if (!window || !window.HTMLDialogElement) {
       throw new Error("[ERROR] HexaConnect: HTMLDialogElement not supported");
@@ -71,7 +72,7 @@ export class HexaConnect {
     if (!this.isConnectWithLink()) {
       return undefined;
     }
-    return signInWithLink();
+    return authProvider.signInWithLink();
   }
 
   public async connectWithUI(isLightMode: boolean = false) {
@@ -135,6 +136,21 @@ export class HexaConnect {
                 );
               }
             }
+            if (detail === "connect-wallet") {
+              try {
+                await this._authWithExternalWallet();
+                await dialogElement.toggleIconAsCheck();
+                dialogElement.hideModal();
+                resolve(this.userInfo);
+              } catch (error: any) {
+                dialogElement.hideModal();
+                reject(
+                  new Error(
+                    `Error while connecting with wallet: ${error?.message}`
+                  )
+                );
+              }             
+            }
           });
         }
         // sleep for 125ms before opening dialog
@@ -163,17 +179,14 @@ export class HexaConnect {
   }
 
   public async signout() {
-    await auth.signOut();
-    this._address = null;
-    this._did = null;
-    this._privateKey = null;
-    this._provider = getDefaultProvider();
+    await authProvider.signOut();
   }
 
   public async signMessage(value: string) {
+    const currentUser = await authProvider.getCurrentUserAuth();
     const result = await signMessage(
       value,
-      decrypt(`${this._privateKey}`, `${auth.currentUser?.uid}`, `${this._p}`)
+      decrypt(`${this._privateKey}`, `${currentUser?.uid}`, `${this._p}`)
     );
     return result;
   }
@@ -184,20 +197,32 @@ export class HexaConnect {
     return isValid;
   }
 
+  /**
+   * Method that manage the entire wallet management process base on user state.
+   * Wallet values are set with the corresponding method base on the user authentication provider.
+   * If no user is connected, all wallet values are set to null with a default provider and the method will return null.
+   * 
+   * @param cb Call back function that return the formated user information to the caller.
+   * @returns 
+   */
   public onConnectStateChanged(
     cb: (user: { address: string; did: string } | null) => void
   ) {
-    return auth.onAuthStateChanged(async (user) => {
+    return authProvider.getOnAuthStateChanged(async (user) => {
       if (user) {
-        await this._setValuesFromCredential();
+        user.isAnonymous
+          ? await this._setValuesFromExternalWallet()
+          : await this._setValuesFromCredential();
       } else {
+        this._p = null;
         this._address = null;
         this._did = null;
         this._privateKey = null;
+        this._publicKey = null;
         this._provider = getDefaultProvider();
       }
       cb(user ? this.userInfo : null);
-      console.log('[INFO] onConnectStateChanged:', this.userInfo);
+      // console.log('[INFO] onConnectStateChanged:', this.userInfo, user);
     });
   }
 
@@ -230,11 +255,11 @@ export class HexaConnect {
 
   private async _authWithGoogle() {
     try {
-      await signinWithGoogle();
+      await authProvider.signinWithGoogle();
     } catch (error) {
       throw error;
     }
-    await this._setValuesFromCredential();
+    // await this._setValuesFromCredential();
   }
 
   private async _authWithEmailLink() {
@@ -244,14 +269,23 @@ export class HexaConnect {
       throw new Error("Email is required to connect");
     }
     try {
-      await sendLinkToEmail(email);
+      await authProvider.sendLinkToEmail(email);
     } catch (error) {
       throw error;
     }
   }
 
+  private async _authWithExternalWallet() {    
+    try {
+      await authProvider.signInAsAnonymous();
+    } catch (error) {
+      throw error;
+    }
+    // await this._setValuesFromExternalWallet();
+  }
+
   private async _setValuesFromCredential() {
-    const credential = auth.currentUser;
+    const credential = await authProvider.getCurrentUserAuth();
     if (!credential) {
       return;
     }
@@ -270,5 +304,15 @@ export class HexaConnect {
     this._p = p;
     this._publicKey = publicKey;
     this._provider = provider;
+  }
+
+  private async _setValuesFromExternalWallet() {
+    const { did, address, provider }  = await connectWithExternalWallet();
+    this._did = did;
+    this._address = address;
+    this._provider = provider;
+    this._privateKey = null;
+    this._p = null;
+    this._publicKey = null;
   }
 }

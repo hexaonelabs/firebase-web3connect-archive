@@ -66,6 +66,13 @@ class HexaSigninDialogElement extends HTMLElement {
               })
             );
             break;
+          case "connect-wallet":
+            this.dispatchEvent(
+              new CustomEvent("connect", {
+                detail: "connect-wallet",
+              })
+            );
+            break;
         }
       });
   }
