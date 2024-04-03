@@ -165,8 +165,8 @@ export class HexaConnect {
   public async signout() {
     await auth.signOut();
     this._address = null;
-    this._did = "";
-    this._privateKey = "";
+    this._did = null;
+    this._privateKey = null;
     this._provider = getDefaultProvider();
   }
 
