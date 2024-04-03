@@ -25,6 +25,7 @@ export class HexaConnect {
   private _publicKey!: string | null;
   private _did!: string | null;
   private _address!: string | null;
+  private _dialogElement!: HexaSigninDialogElement | null;
 
   get provider() {
     return this._provider;
@@ -59,10 +60,8 @@ export class HexaConnect {
       throw new Error("[ERROR] HexaConnect: HTMLDialogElement not supported");
     } 
     console.log(`[INFO] HexaConnect initialized and ready!`, {
-      apiKey: this._apiKey,
-      userFullInfo: {
-        ...this.userInfo,
-      }
+      config: this._ops,
+      mode: import.meta.env.MODE,
     });
   }
 
@@ -89,100 +88,16 @@ export class HexaConnect {
         resolve: (value: HexaConnect["userInfo"]) => void,
         reject: (err: Error) => void
       ) => {
-        // check if dialog exist
-        let dialogElement: HexaSigninDialogElement = document.querySelector(
-          "#hexa-wallet-connectWithUI-dialog"
-        ) as HexaSigninDialogElement;
-        // only add element with event if element not already exist
-        if (!dialogElement) {
-          document.body.insertAdjacentHTML(
-            "beforeend",
-            `<hexa-signin-dialog 
-              id="hexa-wallet-connectWithUI-dialog" 
-              signin-methods="${this._ops?.enabledSigninMethods?.join(",")}"
-              theme="${isLightMode ? 'light' : 'dark'}" />`
-          );
-          dialogElement = document.querySelector(
-            "hexa-signin-dialog"
-          ) as HexaSigninDialogElement;
-
-          // listen to connect event
-          dialogElement.addEventListener("connect", async (e) => {
-            const detail = (e as CustomEvent<string>).detail;
-            console.log(`[INFO] connect event: `, detail);
-            // handle type of connection request
-            if (detail === "connect-google") {
-              try {
-                await this._authWithGoogle();
-                await dialogElement.toggleIconAsCheck(detail);
-                dialogElement.hideModal();
-                resolve(this.userInfo);
-              } catch (error: any) {
-                dialogElement.hideModal();
-                reject(
-                  new Error(
-                    `Error while connecting with google: ${error?.message}`
-                  )
-                );
-              }
-            }
-            if (detail === 'connect-email') {
-              try {
-                const sub = this.onConnectStateChanged((user) => {
-                  console.log("connect-email onConnectStateChanged: ", user)
-                  if (user) {
-                    sub();
-                    dialogElement.toggleIconAsCheck(detail);
-                    dialogElement.hideModal();
-                    resolve(this.userInfo);
-                  }
-                });
-                await this._authWithEmailLink();
-              } catch (error: any) {
-                dialogElement.hideModal();
-                reject(
-                  new Error(
-                    `Error while connecting with google: ${error?.message}`
-                  )
-                );
-              }
-            }
-            if (detail === "connect-wallet") {
-              try {
-                await this._authWithExternalWallet();
-                await dialogElement.toggleIconAsCheck(detail);
-                dialogElement.hideModal();
-                resolve(this.userInfo);
-              } catch (error: any) {
-                dialogElement.hideModal();
-                reject(
-                  new Error(
-                    `Error while connecting with wallet: ${error?.message}`
-                  )
-                );
-              }             
-            }
-          });
+        try {
+          resolve(await this._buildUIandWaitEvent(isLightMode));
+        } catch (error: any) {
+          reject(error);
         }
-        // sleep for 125ms before opening dialog
-        await new Promise((resolve) => {
-          const t = setTimeout(() => {
-            clearTimeout(t);
-            resolve(true);
-          }, 125);
-        });
-        // open modal
-        dialogElement.showModal();
       }
     ).catch((err) => {
       return new Error(`Error while connecting with UI: ${err.message}`);
     });
-    // remove dialog from dom
-    const dialogElement = document.querySelector(
-      "#hexa-wallet-connectWithUI-dialog"
-    );
-    // console.log("dialogElement: ", dialogElement);
-    dialogElement?.remove();
+    this._dialogElement?.remove();
     if (result instanceof Error) {
       throw result;
     }
@@ -237,6 +152,98 @@ export class HexaConnect {
     });
   }
 
+  private async _buildUIandWaitEvent(isLightMode: boolean) {
+    return new Promise(
+      async (
+        resolve: (value: HexaConnect["userInfo"]) => void,
+        reject: (err: Error) => void
+      ) => {
+      document.body.insertAdjacentHTML(
+        "beforeend",
+        `<hexa-signin-dialog 
+          id="hexa-wallet-connectWithUI-dialog" 
+          signin-methods="${this._ops?.enabledSigninMethods?.join(",")}"
+          theme="${isLightMode ? 'light' : 'dark'}" />`
+      );
+      // get element to add events listener
+      this._dialogElement = document.querySelector(
+        "hexa-signin-dialog"
+      ) as HexaSigninDialogElement;
+
+      // listen to connect event
+      this._dialogElement.addEventListener("connect", async (e) => {
+        if (!this._dialogElement) {
+          throw new Error("Dialog element not found");
+        }
+        const detail = (e as CustomEvent<string>).detail;
+        console.log(`[INFO] connect event: `, detail);
+        // handle type of connection request
+        if (detail === "connect-google") {
+          try {
+            await this._authWithGoogle();
+            await this._dialogElement.toggleIconAsCheck(detail);
+            this._dialogElement.hideModal();
+            resolve(this.userInfo);
+          } catch (error: any) {
+            this._dialogElement.hideModal();
+            reject(
+              new Error(
+                `Error while connecting with ${detail}: ${error?.message}`
+              )
+            );
+          }
+        }
+        if (detail === 'connect-email') {
+          try {
+            const sub = this.onConnectStateChanged((user) => {
+              if (!this._dialogElement) {
+                throw new Error("Dialog element not found");
+              }
+              if (user) {
+                sub();
+                this._dialogElement.toggleIconAsCheck(detail);
+                this._dialogElement.hideModal();
+                resolve(this.userInfo);
+              }
+            });
+            await this._authWithEmailLink();
+          } catch (error: any) {
+            this._dialogElement.hideModal();
+            reject(
+              new Error(
+                `Error while connecting with ${detail}: ${error?.message}`
+              )
+            );
+          }
+        }
+        if (detail === "connect-wallet") {
+          try {
+            await this._authWithExternalWallet();
+            await this._dialogElement.toggleIconAsCheck(detail);
+            this._dialogElement.hideModal();
+            resolve(this.userInfo);
+          } catch (error: any) {
+            this._dialogElement.hideModal();
+            reject(
+              new Error(
+                `Error while connecting with ${detail}: ${error?.message}`
+              )
+            );
+          }             
+        }
+      });
+      // sleep for 125ms before opening dialog
+      await new Promise((resolve) => {
+        const t = setTimeout(() => {
+          clearTimeout(t);
+          resolve(true);
+        }, 125);
+      });
+      // open modal
+      this._dialogElement?.showModal();
+    });
+  }
+  
   /*
   private _authWithPassword(value: string) {
     const salt = "uniquesalt"; // Utilise un sel unique pour chaque clé privée

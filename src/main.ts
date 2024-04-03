@@ -7,6 +7,7 @@ import {
 } from "./hexa-connect.service";
 import "./style.css";
 
+console.log("[INFO] App demo initialization...", import.meta.env);
 // get the root app element and check if it exists
 const app = document.querySelector<HTMLDivElement>("#app");
 if (!app) {
