@@ -1,7 +1,7 @@
 import { PBKDF2, AES, enc } from "crypto-js";
 import cryptoRandomString from "crypto-random-string";
 import { Wallet, utils, providers } from "ethers";
-import { CHAIN_AVAILABLES, CHAIN_DEFAULT } from "./constant";
+import { CHAIN_AVAILABLES, CHAIN_DEFAULT } from "../constant";
 
 const generatePrivateKey = () => {
   // Générer une clé privée aléatoire de 32 octets

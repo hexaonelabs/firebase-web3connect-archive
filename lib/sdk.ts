@@ -6,10 +6,10 @@ import {
   generatePrivateKeyFromPassword,
   signMessage,
   verifySignature,
-} from "./evm";
-import { signinWithGoogle, auth, sendLinkToEmail, signInWithLink, initialize as initFirebase } from "./firebase";
-import "./dialogElement";
-import { HexaSigninDialogElement } from "./dialogElement";
+} from "./networks/evm";
+import { signinWithGoogle, auth, sendLinkToEmail, signInWithLink, initialize as initFirebase } from "./providers/auth/firebase";
+import "./ui/dialog-element/dialogElement";
+import { HexaSigninDialogElement } from "./ui/dialog-element/dialogElement";
 import { FirebaseOptions } from "firebase/app";
 
 export class HexaConnect {
