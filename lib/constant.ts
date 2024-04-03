@@ -1,4 +1,17 @@
 
+// enum of available signin methods
+export enum SigninMethod {
+  Google = "connect-google",
+  Email = "connect-email",
+  Wallet = "connect-wallet",
+}
+
+export const DEFAULT_SIGNIN_METHODS: SigninMethod[] = [
+  SigninMethod.Google,
+  SigninMethod.Email,
+  SigninMethod.Wallet,
+];
+
 // Define Network enum that represents supported networks
 export enum NETWORK {
   bitcoin = 1000,

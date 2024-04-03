@@ -12,10 +12,11 @@ import authProvider from "./providers/auth/firebase";
 import "./ui/dialog-element/dialogElement";
 import { HexaSigninDialogElement } from "./ui/dialog-element/dialogElement";
 import { FirebaseOptions } from "firebase/app";
+import { DEFAULT_SIGNIN_METHODS, SigninMethod } from "./constant";
 
 export class HexaConnect {
   private readonly _apiKey!: FirebaseOptions;
-  private _ops?: { chainId?: number; rpcUrl?: string };
+  private _ops?: { chainId?: number; rpcUrl?: string; enabledSigninMethods?:  SigninMethod[]; };
   private _p!: string | null;
   private _provider!:
     | providers.JsonRpcProvider
@@ -41,10 +42,17 @@ export class HexaConnect {
 
   constructor(
     apiKey: string, 
-    ops?: { chainId?: number; rpcUrl?: string}
+    ops?: { 
+      chainId?: number; 
+      rpcUrl?: string;
+      enabledSigninMethods?:  SigninMethod[];
+    }
   ) {
     this._apiKey = this._parseApiKey(apiKey.slice(2));
-    this._ops = ops;
+    this._ops = {
+      enabledSigninMethods: DEFAULT_SIGNIN_METHODS,
+      ...ops
+    };
     authProvider.initialize(this._apiKey);
     // check if window is available and HTMLDialogElement is supported
     if (!window || !window.HTMLDialogElement) {
@@ -89,7 +97,10 @@ export class HexaConnect {
         if (!dialogElement) {
           document.body.insertAdjacentHTML(
             "beforeend",
-            `<hexa-signin-dialog id="hexa-wallet-connectWithUI-dialog" theme="${isLightMode ? 'light' : 'dark'}" />`
+            `<hexa-signin-dialog 
+              id="hexa-wallet-connectWithUI-dialog" 
+              signin-methods="${this._ops?.enabledSigninMethods?.join(",")}"
+              theme="${isLightMode ? 'light' : 'dark'}" />`
           );
           dialogElement = document.querySelector(
             "hexa-signin-dialog"
