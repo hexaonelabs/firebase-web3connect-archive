@@ -241,6 +241,10 @@ export class HexaConnect {
             );
           }             
         }
+        if (detail === "cancel") {
+          this._dialogElement.hideModal();
+          resolve(this.userInfo);
+        }
       });
       // sleep for 125ms before opening dialog
       await new Promise((resolve) => {

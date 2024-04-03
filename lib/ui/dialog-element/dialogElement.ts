@@ -63,11 +63,19 @@ class HexaSigninDialogElement extends HTMLElement {
   // manage events from shadow dom
   public connectedCallback() {
     this.shadowRoot
-      ?.querySelector(".buttonsList")
+      ?.querySelector("dialog")
       ?.addEventListener("click", async (event) => {
         const target = event.target as HTMLElement;
         const button = target.closest("button");
         if (!button) return;
+        // handle cancel
+        if (button.id === "cancel") {
+          this.dispatchEvent(
+            new CustomEvent("connect", {
+              detail: button.id,
+            })
+          );
+        }
         // styling button as loading
         [
           ...((this.shadowRoot?.querySelectorAll(".buttonsList button") ||
