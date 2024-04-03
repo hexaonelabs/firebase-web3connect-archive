@@ -67,6 +67,7 @@
   width: 80vw;
   max-width: 400px;
   box-sizing: border-box;
+  cursor: default;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -113,6 +114,11 @@ a {
   font-size: 0.6rem;
   margin: 1rem;
 }
+:host dialog p.or {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
 :host dialog p.policy {
   font-size: 0.6rem;
   margin: 1rem;

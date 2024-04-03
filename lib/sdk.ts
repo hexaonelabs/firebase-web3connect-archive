@@ -9,6 +9,7 @@ import {
   verifySignature,
 } from "./networks/evm";
 import authProvider from "./providers/auth/firebase";
+import storageProvider from "./providers/storage/fleek";
 import "./ui/dialog-element/dialogElement";
 import { HexaSigninDialogElement } from "./ui/dialog-element/dialogElement";
 import { FirebaseOptions } from "firebase/app";
@@ -16,7 +17,12 @@ import { DEFAULT_SIGNIN_METHODS, SigninMethod } from "./constant";
 
 export class HexaConnect {
   private readonly _apiKey!: FirebaseOptions;
-  private _ops?: { chainId?: number; rpcUrl?: string; enabledSigninMethods?:  SigninMethod[]; };
+  private _ops?: { 
+    chainId?: number; 
+    rpcUrl?: string; 
+    enabledSigninMethods?:  SigninMethod[]; 
+    storageService?: { apiKey: string; };
+  };
   private _p!: string | null;
   private _provider!:
     | providers.JsonRpcProvider
@@ -47,6 +53,7 @@ export class HexaConnect {
       chainId?: number; 
       rpcUrl?: string;
       enabledSigninMethods?:  SigninMethod[];
+      storageService?: { apiKey: string; };
     }
   ) {
     this._apiKey = this._parseApiKey(apiKey.slice(2));
@@ -55,6 +62,9 @@ export class HexaConnect {
       ...ops
     };
     authProvider.initialize(this._apiKey);
+    if (this._ops?.storageService?.apiKey) {
+      storageProvider.initialize(this._ops?.storageService?.apiKey);
+    }
     // check if window is available and HTMLDialogElement is supported
     if (!window || !window.HTMLDialogElement) {
       throw new Error("[ERROR] HexaConnect: HTMLDialogElement not supported");
