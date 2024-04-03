@@ -9,7 +9,8 @@ export function setupAccountTab(element: HTMLDivElement, wallet: typeof hexaConn
 
     <input id="content" type="text" /><br/>
     <button id="sign">sign</button>
-    <button id="verify">verify</button>
+    <button id="verify">verify</button><br/>
+    <button id="signout">signout</button>
   `;
 
   element.querySelector("#sign")?.addEventListener("click", async () => {
@@ -26,5 +27,9 @@ export function setupAccountTab(element: HTMLDivElement, wallet: typeof hexaConn
       signature
     );
     console.log("Signature is valid:", isValid);
+  });
+
+  element.querySelector("#signout")?.addEventListener("click", async () => {
+    await wallet.signout();
   });
 }
