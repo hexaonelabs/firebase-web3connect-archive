@@ -7,13 +7,14 @@ import {
   signMessage,
   verifySignature,
 } from "./evm";
-import { signinWithGoogle, auth, sendLinkToEmail, signInWithLink, initialize } from "./firebase";
+import { signinWithGoogle, auth, sendLinkToEmail, signInWithLink, initialize as initFirebase } from "./firebase";
 import "./dialogElement";
 import { HexaSigninDialogElement } from "./dialogElement";
 import { FirebaseOptions } from "firebase/app";
 
 export class HexaConnect {
   private readonly _apiKey!: FirebaseOptions;
+  private _ops?: { chainId?: number; rpcUrl?: string };
   private _p!: string | null;
   private _provider!:
     | providers.JsonRpcProvider
@@ -37,9 +38,13 @@ export class HexaConnect {
       : null;
   }
 
-  constructor(apiKey: string) {
+  constructor(
+    apiKey: string, 
+    ops?: { chainId?: number; rpcUrl?: string}
+  ) {
     this._apiKey = this._parseApiKey(apiKey.slice(2));
-    initialize(this._apiKey);
+    this._ops = ops;
+    initFirebase(this._apiKey);
     // check if window is available and HTMLDialogElement is supported
     if (!window || !window.HTMLDialogElement) {
       throw new Error("[ERROR] HexaConnect: HTMLDialogElement not supported");
@@ -259,7 +264,7 @@ export class HexaConnect {
     const salt = providerId; // Utilise un sel unique pour chaque clé privée
     const derivativePrivateKey = generatePrivateKeyFromPassword(uid, salt);
     const { address, did, provider, publicKey, privateKey } =
-      generateEvmAddress(derivativePrivateKey);
+      generateEvmAddress(derivativePrivateKey, this._ops?.chainId);
     const { encryptedData, salt: p } = encrypt(privateKey, uid);
     this._did = did;
     this._address = address;
