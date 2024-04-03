@@ -103,7 +103,7 @@ export class HexaConnect {
             if (detail === "connect-google") {
               try {
                 await this._authWithGoogle();
-                await dialogElement.toggleIconAsCheck();
+                await dialogElement.toggleIconAsCheck(detail);
                 dialogElement.hideModal();
                 resolve(this.userInfo);
               } catch (error: any) {
@@ -121,7 +121,7 @@ export class HexaConnect {
                   console.log("connect-email onConnectStateChanged: ", user)
                   if (user) {
                     sub();
-                    dialogElement.toggleIconAsCheck();
+                    dialogElement.toggleIconAsCheck(detail);
                     dialogElement.hideModal();
                     resolve(this.userInfo);
                   }
@@ -139,7 +139,7 @@ export class HexaConnect {
             if (detail === "connect-wallet") {
               try {
                 await this._authWithExternalWallet();
-                await dialogElement.toggleIconAsCheck();
+                await dialogElement.toggleIconAsCheck(detail);
                 dialogElement.hideModal();
                 resolve(this.userInfo);
               } catch (error: any) {

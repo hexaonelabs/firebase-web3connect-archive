@@ -48,28 +48,32 @@ class HexaSigninDialogElement extends HTMLElement {
         const button = target.closest("button");
         if (!button) return;
         // styling button as loading
-        button.disabled = true;
+        [
+          ...(this.shadowRoot?.querySelectorAll(".buttonsList button")||[]) as HTMLButtonElement[]
+        ].forEach(
+          (buttonElement) => buttonElement.disabled = true
+        );
         button.innerHTML = `Connecting...`;
         // emiting custome event
         switch (button.id) {
           case "connect-google":
             this.dispatchEvent(
               new CustomEvent("connect", {
-                detail: "connect-google",
+                detail: button.id,
               })
             );
             break;
           case "connect-email":
             this.dispatchEvent(
               new CustomEvent("connect", {
-                detail: "connect-email",
+                detail: button.id,
               })
             );
             break;
           case "connect-wallet":
             this.dispatchEvent(
               new CustomEvent("connect", {
-                detail: "connect-wallet",
+                detail: button.id,
               })
             );
             break;
@@ -77,9 +81,9 @@ class HexaSigninDialogElement extends HTMLElement {
       });
   }
 
-  public async toggleIconAsCheck(): Promise<boolean> {
+  public async toggleIconAsCheck(buttonElementId: string): Promise<boolean> {
     // toggle with transition animation
-    const button = this.shadowRoot?.querySelector("#connect-google");
+    const button = this.shadowRoot?.getElementById(buttonElementId);
     if (button) {
       button.innerHTML = `
       <svg 
