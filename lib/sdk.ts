@@ -114,6 +114,8 @@ export class HexaConnect {
     ).catch((err) => {
       return new Error(`Error while connecting with UI: ${err.message}`);
     });
+    // wait 225ms to let the dialog close wth animation
+    await new Promise((resolve) => setTimeout(resolve, 225));
     // remove dialog element
     this._dialogElement?.remove();
     if (result instanceof Error) {
