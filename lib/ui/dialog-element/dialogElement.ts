@@ -65,8 +65,7 @@ class HexaSigninDialogElement extends HTMLElement {
     this.shadowRoot
       ?.querySelector("dialog")
       ?.addEventListener("click", async (event) => {
-        const target = event.target as HTMLElement;
-        const button = target.closest("button");
+        const button = (event.target as HTMLElement).closest("button");
         if (!button) return;
         // handle cancel
         if (button.id === "cancel") {
@@ -75,14 +74,21 @@ class HexaSigninDialogElement extends HTMLElement {
               detail: button.id,
             })
           );
+          // stop further execution of code
+          // as we don't want to show loading on cancel
+          // and we don't want to show connected on cancel.
+          // This will trigger the event and close the dialog
+          return;
         }
-        // styling button as loading
+        // disable all btns. This will prevent multiple clicks.
+        // We dont need to enable them back as dialog will be closed and removed from DOM
         [
           ...((this.shadowRoot?.querySelectorAll(".buttonsList button") ||
-            []) as HTMLButtonElement[]),
+          []) as HTMLButtonElement[]),
         ].forEach((buttonElement) => (buttonElement.disabled = true));
+        // styling button as loading
         button.innerHTML = `Connecting...`;
-        // emiting custome event
+        // emiting custome event to SDK
         switch (button.id) {
           case "connect-google":
             this.dispatchEvent(
