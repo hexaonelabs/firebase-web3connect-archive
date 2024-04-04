@@ -99,7 +99,14 @@ export class HexaConnect {
         reject: (err: Error) => void
       ) => {
         try {
-          resolve(await this._buildUIandWaitEvent(isLightMode));
+          // build UI
+          const dialogElement = await this._buildUI(isLightMode);
+          // open modal
+          dialogElement.showModal();
+          // wait for connect event
+          const result = await this._addAndWaitUIEventsResult();
+          // resolve result
+          resolve(result);
         } catch (error: any) {
           reject(error);
         }
@@ -107,6 +114,7 @@ export class HexaConnect {
     ).catch((err) => {
       return new Error(`Error while connecting with UI: ${err.message}`);
     });
+    // remove dialog element
     this._dialogElement?.remove();
     if (result instanceof Error) {
       throw result;
@@ -158,28 +166,36 @@ export class HexaConnect {
         this._provider = getDefaultProvider();
       }
       cb(user ? this.userInfo : null);
-      // console.log('[INFO] onConnectStateChanged:', this.userInfo, user);
+      console.log('[INFO] onConnectStateChanged:', this.userInfo, user);
     });
   }
 
-  private async _buildUIandWaitEvent(isLightMode: boolean) {
+  private async _buildUI(isLightMode: boolean) {
+    document.body.insertAdjacentHTML(
+      "beforeend",
+      `<hexa-signin-dialog 
+        id="hexa-wallet-connectWithUI-dialog" 
+        signin-methods="${this._ops?.enabledSigninMethods?.join(",")}"
+        theme="${isLightMode ? 'light' : 'dark'}" />`
+    );
+    this._dialogElement = document.getElementById(
+      "hexa-wallet-connectWithUI-dialog"
+    ) as HexaSigninDialogElement;
+    if (!this._dialogElement) {
+      throw new Error("Error while building UI: Dialog element not found");
+    }
+    return this._dialogElement;
+  }
+
+  private async _addAndWaitUIEventsResult() {
     return new Promise(
       async (
         resolve: (value: HexaConnect["userInfo"]) => void,
         reject: (err: Error) => void
-      ) => {
-      document.body.insertAdjacentHTML(
-        "beforeend",
-        `<hexa-signin-dialog 
-          id="hexa-wallet-connectWithUI-dialog" 
-          signin-methods="${this._ops?.enabledSigninMethods?.join(",")}"
-          theme="${isLightMode ? 'light' : 'dark'}" />`
-      );
-      // get element to add events listener
-      this._dialogElement = document.querySelector(
-        "hexa-signin-dialog"
-      ) as HexaSigninDialogElement;
-
+    ) => {
+      if (!this._dialogElement) {
+        throw new Error("Dialog element not found");
+      }
       // listen to connect event
       this._dialogElement.addEventListener("connect", async (e) => {
         if (!this._dialogElement) {
@@ -241,20 +257,10 @@ export class HexaConnect {
             );
           }             
         }
-        if (detail === "cancel") {
-          this._dialogElement.hideModal();
-          resolve(this.userInfo);
-        }
+        // default case is cancel
+        this._dialogElement.hideModal();
+        resolve(this.userInfo);
       });
-      // sleep for 125ms before opening dialog
-      await new Promise((resolve) => {
-        const t = setTimeout(() => {
-          clearTimeout(t);
-          resolve(true);
-        }, 125);
-      });
-      // open modal
-      this._dialogElement?.showModal();
     });
   }
   
