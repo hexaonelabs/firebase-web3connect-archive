@@ -1,19 +1,13 @@
 import { providers, getDefaultProvider } from "ethers";
-import {
-  connectWithExternalWallet,
-  decrypt,
-  encrypt,
-  generateEvmAddress,
-  generatePrivateKeyFromPassword,
-  signMessage,
-  verifySignature,
-} from "./networks/evm";
+import evmWallet from "./networks/evm";
 import authProvider from "./providers/auth/firebase";
-import storageProvider from "./providers/storage/fleek";
+import storageProvider from "./providers/storage/local";
 import "./ui/dialog-element/dialogElement";
 import { HexaSigninDialogElement } from "./ui/dialog-element/dialogElement";
 import { FirebaseOptions } from "firebase/app";
 import { DEFAULT_SIGNIN_METHODS, SigninMethod } from "./constant";
+import Crypto from "./providers/crypto/crypto";
+import { IStorageProvider } from "./interfaces/storage-provider.interface";
 
 export class HexaConnect {
   private readonly _apiKey!: FirebaseOptions;
@@ -21,9 +15,9 @@ export class HexaConnect {
     chainId?: number; 
     rpcUrl?: string; 
     enabledSigninMethods?:  SigninMethod[]; 
-    storageService?: { apiKey: string; };
+    storageService?: IStorageProvider;
   };
-  private _p!: string | null;
+  private _secret!: string | null;
   private _provider!:
     | providers.JsonRpcProvider
     | providers.BaseProvider;
@@ -53,7 +47,7 @@ export class HexaConnect {
       chainId?: number; 
       rpcUrl?: string;
       enabledSigninMethods?:  SigninMethod[];
-      storageService?: { apiKey: string; };
+      storageService?: IStorageProvider;
     }
   ) {
     this._apiKey = this._parseApiKey(apiKey.slice(2));
@@ -62,9 +56,6 @@ export class HexaConnect {
       ...ops
     };
     authProvider.initialize(this._apiKey);
-    if (this._ops?.storageService?.apiKey) {
-      storageProvider.initialize(this._ops?.storageService?.apiKey);
-    }
     // check if window is available and HTMLDialogElement is supported
     if (!window || !window.HTMLDialogElement) {
       throw new Error("[ERROR] HexaConnect: HTMLDialogElement not supported");
@@ -125,22 +116,26 @@ export class HexaConnect {
   }
 
   public async signout() {
+    await storageProvider.removeItem('hexa-secret');
     await authProvider.signOut();
   }
 
   public async signMessage(value: string) {
-    const currentUser = await authProvider.getCurrentUserAuth();
-    const result = await signMessage(
-      value,
-      decrypt(`${this._privateKey}`, `${currentUser?.uid}`, `${this._p}`)
-    );
-    return result;
+    throw new Error("Method not implemented yet!");
+    
+    // const currentUser = await authProvider.getCurrentUserAuth();
+    // const result = await signMessage(
+    //   value,
+    //   decrypt(`${this._privateKey}`, `${currentUser?.uid}`, `${this._p}`)
+    // );
+    // return result;
   }
 
   public verifySignature(value: string, signature: string) {
-    // Verify the signature with address
-    const isValid = verifySignature(value, signature, `${this._address}`);
-    return isValid;
+    throw new Error("Method not implemented yet!");
+    // // Verify the signature with address
+    // const isValid = verifySignature(value, signature, `${this._address}`);
+    // return isValid;
   }
 
   /**
@@ -156,11 +151,56 @@ export class HexaConnect {
   ) {
     return authProvider.getOnAuthStateChanged(async (user) => {
       if (user) {
-        user.isAnonymous
-          ? await this._setValuesFromExternalWallet()
-          : await this._setValuesFromCredential();
+        // set storage.uid
+        (this._ops?.storageService || storageProvider).setUid(user.uid);
+        try {
+          // if user is anonymous, 
+          // this mean the user want to connect with an external wallet
+          // so we call methode to connect with external wallet
+          // then we set the wallet values
+          // otherwise we set the wallet values from the user credential
+          if (user.isAnonymous) {
+            const { did, address, provider }  = await evmWallet.connectWithExternalWallet();
+            await this._setValues({ did, address, provider });
+          } else {
+            if (!this._secret) {
+              // check if secret is stored in local storage
+              const encryptedSecret = await storageProvider.getItem('hexa-secret', user.uid);
+              if (encryptedSecret) {
+                this._secret = await Crypto.decrypt(user.uid, encryptedSecret);
+              } else {
+                // await this.signout();
+                throw new Error("Secret is required to decrypt the private key");
+              }
+            }
+            // check if encrypted private key is available from storage
+            const storedPrivateKey = await storageProvider.getItem('hexa-private-key', this._secret);
+            // generate wallet from encrypted private key or generate new from random mnemonic
+            const { 
+              address, 
+              did, 
+              provider, 
+              publicKey, 
+              privateKey 
+            } = storedPrivateKey
+            ? await evmWallet.generateWalletFromPrivateKey(
+                storedPrivateKey, 
+                this._ops?.chainId
+              )
+            : await evmWallet.generateWalletFromMnemonic()
+              .then(async (wallet) => {
+                // encrypt private key before storing it
+                await storageProvider.setItem('hexa-private-key', wallet.privateKey, this._secret||undefined);
+                return wallet;
+              });
+            await this._setValues({ did, address, provider, publicKey, privateKey })
+          }
+        } catch (error) {
+          await this.signout();
+          throw error;          
+        }
       } else {
-        this._p = null;
+        this._secret = null;
         this._address = null;
         this._did = null;
         this._privateKey = null;
@@ -208,8 +248,20 @@ export class HexaConnect {
         // handle type of connection request
         if (detail === "connect-google") {
           try {
-            await this._authWithGoogle();
+            const value = await this._dialogElement.prompt(
+              "Please provide a password to encrypt and decrypt your private key",
+              {
+                inputType: "password", 
+                autocomplet: "new-password",
+                placeholder: "password",
+              }
+            );
+            this._secret = value;
+            const { uid } = await this._authWithGoogle();
             await this._dialogElement.toggleIconAsCheck(detail);
+            const encryptedSecret = await Crypto.encrypt(uid, this._secret);
+            console.log(`[INFO] Storage.setItem :  hexa-secret - `, encryptedSecret);
+            await storageProvider.setItem('hexa-secret', encryptedSecret, uid);
             this._dialogElement.hideModal();
             resolve(this.userInfo);
           } catch (error: any) {
@@ -295,11 +347,10 @@ export class HexaConnect {
 
   private async _authWithGoogle() {
     try {
-      await authProvider.signinWithGoogle();
+      return await authProvider.signinWithGoogle();
     } catch (error) {
       throw error;
     }
-    // await this._setValuesFromCredential();
   }
 
   private async _authWithEmailLink() {
@@ -321,38 +372,26 @@ export class HexaConnect {
     } catch (error) {
       throw error;
     }
-    // await this._setValuesFromExternalWallet();
   }
 
-  private async _setValuesFromCredential() {
-    const credential = await authProvider.getCurrentUserAuth();
-    if (!credential) {
-      return;
-    }
-    const { uid, providerId } = {
-      uid: credential.uid,
-      providerId: credential.providerData[0].uid,
-    };
-    const salt = providerId; // Utilise un sel unique pour chaque clé privée
-    const derivativePrivateKey = generatePrivateKeyFromPassword(uid, salt);
-    const { address, did, provider, publicKey, privateKey } =
-      generateEvmAddress(derivativePrivateKey, this._ops?.chainId);
-    const { encryptedData, salt: p } = encrypt(privateKey, uid);
+  private async _setValues(values: {
+    did: string;
+    address: string;
+    provider: providers.JsonRpcProvider;
+    privateKey?: string;
+    publicKey?: string;
+  }) {
+    const { 
+      did, 
+      address, 
+      provider, 
+      privateKey = null, 
+      publicKey = null
+    }  = values;
     this._did = did;
     this._address = address;
-    this._privateKey = encryptedData;
-    this._p = p;
+    this._provider = provider;
+    this._privateKey = privateKey;
     this._publicKey = publicKey;
-    this._provider = provider;
-  }
-
-  private async _setValuesFromExternalWallet() {
-    const { did, address, provider }  = await connectWithExternalWallet();
-    this._did = did;
-    this._address = address;
-    this._provider = provider;
-    this._privateKey = null;
-    this._p = null;
-    this._publicKey = null;
   }
 }

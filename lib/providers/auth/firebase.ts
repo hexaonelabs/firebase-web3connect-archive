@@ -25,8 +25,7 @@ const signinWithGoogle = async () => {
     // await setPersistence(auth, browserLocalPersistence);
     const provider = new GoogleAuthProvider();
     const credential = await signInWithPopup(auth, provider);
-    return credential;
-
+    return credential.user;
   } catch (err) {
     throw err;
   }

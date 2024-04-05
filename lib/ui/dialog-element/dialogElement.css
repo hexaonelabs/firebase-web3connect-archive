@@ -48,6 +48,11 @@
   line-height: 1.5;
   font-weight: 400;
   color-scheme: light dark;
+  box-sizing: border-box;
+}
+
+:host * {
+  box-sizing: border-box;
 }
 
 :host dialog {
@@ -105,27 +110,39 @@ a {
   color: var(--text-link-hover);
 }
 
-:host dialog p {
+:host p {
+  font-size: 0.8rem;
   font-weight: 400;
-  margin: 12px 0rem 0rem;
+  margin: 12px auto 0rem;
+  max-width: 300px;
 }  
+
 :host dialog p.title {
   font-size: 0.6rem;
-  margin: 1rem;
+  margin: 1rem auto;
 }
 :host dialog p.or {
   font-size: 0.8rem;
   opacity: 0.8;
 }
 
-:host dialog p.policy {
+:host p.policy {
   font-size: 0.6rem;
-  margin: 1rem;
+  margin: 1rem auto;
 }
-:host dialog p.powered-by {
+:host p.powered-by {
   font-size: 0.5rem;
-  margin: 1rem;
+  margin: 1rem auto;
   opacity: 0.8;
+}
+
+:host .buttonsList {
+  position: relative;
+}
+
+:host *:focus-visible {
+  outline: none;
+  outline-offset: 2px;
 }
 
 :host dialog button {

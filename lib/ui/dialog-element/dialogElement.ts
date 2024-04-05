@@ -1,6 +1,7 @@
 import html from "./dialogElement.html?raw";
 import css from "./dialogElement.css?raw";
 import { DEFAULT_SIGNIN_METHODS, SigninMethod } from "../../constant";
+import { promptElement } from "../prompt-element/prompt-element";
 
 // export web component with shadowdom
 class HexaSigninDialogElement extends HTMLElement {
@@ -86,8 +87,6 @@ class HexaSigninDialogElement extends HTMLElement {
           ...((this.shadowRoot?.querySelectorAll(".buttonsList button") ||
           []) as HTMLButtonElement[]),
         ].forEach((buttonElement) => (buttonElement.disabled = true));
-        // styling button as loading
-        button.innerHTML = `Connecting...`;
         // emiting custome event to SDK
         switch (button.id) {
           case "connect-google":
@@ -112,6 +111,8 @@ class HexaSigninDialogElement extends HTMLElement {
             );
             break;
         }
+        // styling button as loading
+        button.innerHTML = `Connecting...`;
       });
   }
 
@@ -137,6 +138,19 @@ class HexaSigninDialogElement extends HTMLElement {
     } else {
       throw new Error("Button not found");
     }
+  }
+
+  public async prompt(message: string, opts?: {
+    inputType?: string;
+    autocomplet?: string;
+    placeholder?: string;
+  }) {
+    const value = await promptElement(
+      this.shadowRoot?.querySelector("dialog .buttonsList") as HTMLElement, 
+      message,
+      opts
+    );
+    return value;
   }
 }
 

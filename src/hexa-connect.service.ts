@@ -5,12 +5,12 @@ const APIKEY = import.meta.env.VITE_AUTH_APIKEY||''; // get APIKEY from .env fil
 export const hexaConnect = new HexaConnect(
   APIKEY,
   {
-    enabledSigninMethods: [
-      SigninMethod.Google,
-    ],
-    storageService: {
-      apiKey: import.meta.env.VITE_STORAGE_APIKEY,
-    }
+    // enabledSigninMethods: [
+    //   SigninMethod.Google,
+    // ],
+    // storageService: {
+    //   apiKey: import.meta.env.VITE_STORAGE_APIKEY,
+    // }
   }
 );
 

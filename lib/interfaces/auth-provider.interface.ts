@@ -2,7 +2,7 @@
 type Unsubscribe = () => void;
 
 export interface IAuthProvider<T> {
-  signinWithGoogle: () => Promise<any>;
+  signinWithGoogle: () => Promise<{uid: string}>;
   sendLinkToEmail: (email: string) => Promise<void>;
   signInWithLink: () => Promise<any>;
   signInAsAnonymous: () => Promise<any>;
@@ -10,6 +10,6 @@ export interface IAuthProvider<T> {
   getOnAuthStateChanged: (
     cb: (user: {uid: string; isAnonymous: boolean} | null) => void
   ) => Unsubscribe;
-  getCurrentUserAuth: () => Promise<any>;
+  getCurrentUserAuth: () => Promise<{uid: string; isAnonymous: boolean} | null>;
   initialize: (config: T) => void;
 }
