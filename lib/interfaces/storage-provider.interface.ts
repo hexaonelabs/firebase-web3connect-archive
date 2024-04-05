@@ -5,5 +5,5 @@ export interface IStorageProvider {
   setItem(key: string, value: string, passkey?: string): Promise<void>;
   removeItem(key: string): Promise<void>;
   clear(): Promise<void>;
-  
+  isExistingPrivateKeyStored(): Promise<boolean>;
 }

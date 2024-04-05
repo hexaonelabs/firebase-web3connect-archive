@@ -140,15 +140,9 @@ class HexaSigninDialogElement extends HTMLElement {
     }
   }
 
-  public async prompt(message: string, opts?: {
-    inputType?: string;
-    autocomplet?: string;
-    placeholder?: string;
-  }) {
+  public async promptPassword() {
     const value = await promptElement(
-      this.shadowRoot?.querySelector("dialog .buttonsList") as HTMLElement, 
-      message,
-      opts
+      this.shadowRoot?.querySelector("dialog .buttonsList") as HTMLElement
     );
     return value;
   }

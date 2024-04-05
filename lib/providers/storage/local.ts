@@ -101,6 +101,11 @@ class LocalStorage implements IStorageProvider {
     window.localStorage.clear();
   }
 
+  public async isExistingPrivateKeyStored() {
+    const encryptedMapIndexString = window.localStorage.getItem(Environment.encryptedKeyIndexKey());
+    return !!encryptedMapIndexString;
+  }
+
   private async _getAndDecryptEncryptedKeyIndex() {
     const encryptedMapIndexString = window.localStorage.getItem(Environment.encryptedKeyIndexKey());
     if (!encryptedMapIndexString) {

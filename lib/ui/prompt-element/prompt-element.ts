@@ -1,32 +1,30 @@
 
-export const promptElement = (
+import storageProvider from "../../providers/storage/local";
+
+export const promptElement = async (
   ref: HTMLElement, 
-  message: string, 
-  opts?: {
-    inputType?: string;
-    autocomplet?: string;
-    placeholder?: string;
-  },
 ): Promise<string> => {
+
+  const minPasswordLength = 4;
+  const maxPasswordLength = 32;
+
+  const isCreating = !await storageProvider.isExistingPrivateKeyStored()
+
+  const isValideInputs = (inputPassword: HTMLInputElement, inputConfirme?: HTMLInputElement) => {
+    if (!inputConfirme) {
+      return inputPassword.value.length > 0;
+    }
+    return (inputPassword.value.length > 0 && inputConfirme.value.length > 0 && inputPassword.value === inputConfirme.value);
+  }
+
   return new Promise((resolve) => {
-    // build variable from existing options and default using extracting
-    // the value from the opts object
-    const { 
-      inputType = 'text', 
-      autocomplet = 'off',
-      placeholder = '',
-    } = opts || {};
 
     const container = document.createElement('div');
     container.classList.add('prompt-container');
     const html = `
     <style>
       .prompt-container {
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
         background: var(--dialog-background-color);
-        position: absolute;
         height: 100%;
         width: 100%;
         display: flex;
@@ -35,52 +33,102 @@ export const promptElement = (
         padding: 0rem;
         box-sizing: border-box;
       }
+
       .prompt__input {
         display: block;
-        min-hieght: 50px;
+        min-height: 50px;
         width: 100%;
         max-width: 300px;
-        margin: 1rem auto 0;
+        margin: 0rem auto 0.5rem;
         text-align: center;
         color: var(--text-color);
         background: var(--dialog-background-color);
         border: var(--dialog-border);
-        border-radius: 24px;
+        border-radius: 12px;
         padding: 12px 16px;
         font-size: 1em;
         text-align: center;
       }
+      .prompt__message { 
+        margin-bottom: 1.5rem;
+      }
+      .prompt__button {
+        margin-top: 1rem;
+      }
+
     </style>
       <div class="prompt__message">
-        <p>${message}</p>
+        <p><b>${
+          isCreating 
+            ? 'Protect your wallet with a password'
+            : 'Welcome back!'
+        
+        }</b></p>
+        <p>
+          ${isCreating
+            ? `The password you enter encrypts your private key and gives access to your funds. Please store your password in a safe place. We don’t keep your information and can’t restore it.`
+            : `Unlock your wallet with your password.`
+          }
+        </p>
       </div>
       <input 
-        class="prompt__input" 
-        name="${inputType}"
-        type="${inputType}" 
-        autocomplet="${autocomplet}"
-        placeholder="${placeholder}" />
+        class="prompt__input password" 
+        name="password"
+        type="password" 
+        minLength="${minPasswordLength}"
+        maxLength="${maxPasswordLength}"
+        autocomplet="${ isCreating ? 'new-password' : 'current-password'}"
+        placeholder="password" />
+      ${isCreating 
+          ? `
+            <input 
+              class="prompt__input confirme" 
+              name="confirme"
+              type="password" 
+              minLength="${minPasswordLength}"
+              maxLength="${maxPasswordLength}"
+              autocomplet="new-password"
+              placeholder="confirme password" />
+              `
+              : ``}
       <button disabled class="prompt__button">OK</button>
     `;
     container.innerHTML = html;
-    ref.appendChild(container);
+    ref.after(container);
+    ref.style.display = 'none';
 
-    const input = container.querySelector('.prompt__input') as HTMLInputElement;
+    const inputPassword = container.querySelector('.prompt__input.password') as HTMLInputElement;
+    const inputConfirme = container.querySelector('.prompt__input.confirme') as HTMLInputElement;
     const button = container.querySelector('.prompt__button') as HTMLButtonElement;
-
     button.addEventListener('click', () => {
-      resolve(input.value);
+      resolve(inputPassword.value);
       container.remove();
+      ref.style.display = 'block';
+    });
+    
+    // manage validation of input to enable button
+    inputPassword.addEventListener('input', () => {
+      const isValid = isValideInputs(inputPassword, inputConfirme);
+      button.disabled = !isValid;
     });
 
-    // manage validation of input to enable button
-    input.addEventListener('input', () => {
-      if (input.value.length > 0) {
-        button.disabled = false;
-      } else {
-        button.disabled = true;
-      }
-    });
+    if (isCreating) {
+      inputConfirme.addEventListener('input', () => {
+        const isValid = isValideInputs(inputPassword, inputConfirme);
+        button.disabled = !isValid;
+      });
+    }
 
   });
 };
+
+
+
+
+
+
+// Please save your backup file and keep it properly as well as password. It ensures access to your funds.
+
+// Access to the wallet is possible only using both password and backup file.
+// Hexa Lite does not keep nor able to restore your backup and password. Only you have access to your wallet.
+// Never share it with anyone.

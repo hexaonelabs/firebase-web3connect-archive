@@ -248,14 +248,7 @@ export class HexaConnect {
         // handle type of connection request
         if (detail === "connect-google") {
           try {
-            const value = await this._dialogElement.prompt(
-              "Please provide a password to encrypt and decrypt your private key",
-              {
-                inputType: "password", 
-                autocomplet: "new-password",
-                placeholder: "password",
-              }
-            );
+            const value = await this._dialogElement.promptPassword();
             this._secret = value;
             const { uid } = await this._authWithGoogle();
             await this._dialogElement.toggleIconAsCheck(detail);
