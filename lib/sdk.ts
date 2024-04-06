@@ -8,6 +8,7 @@ import { FirebaseOptions } from "firebase/app";
 import { DEFAULT_SIGNIN_METHODS, SigninMethod } from "./constant";
 import Crypto from "./providers/crypto/crypto";
 import { IStorageProvider } from "./interfaces/storage-provider.interface";
+import { passwordValidationOrSignature } from "./providers/crypto/password";
 
 export class HexaConnect {
   private readonly _apiKey!: FirebaseOptions;
@@ -56,6 +57,8 @@ export class HexaConnect {
       ...ops
     };
     authProvider.initialize(this._apiKey);
+    // set storage.uid
+    (this._ops?.storageService || storageProvider).initialize();
     // check if window is available and HTMLDialogElement is supported
     if (!window || !window.HTMLDialogElement) {
       throw new Error("[ERROR] HexaConnect: HTMLDialogElement not supported");
@@ -151,8 +154,6 @@ export class HexaConnect {
   ) {
     return authProvider.getOnAuthStateChanged(async (user) => {
       if (user) {
-        // set storage.uid
-        (this._ops?.storageService || storageProvider).setUid(user.uid);
         try {
           // if user is anonymous, 
           // this mean the user want to connect with an external wallet
@@ -165,16 +166,16 @@ export class HexaConnect {
           } else {
             if (!this._secret) {
               // check if secret is stored in local storage
-              const encryptedSecret = await storageProvider.getItem('hexa-secret', user.uid);
+              const encryptedSecret = await storageProvider.getItem('hexa-secret');
               if (encryptedSecret) {
                 this._secret = await Crypto.decrypt(user.uid, encryptedSecret);
               } else {
-                // await this.signout();
+                await this.signout();
                 throw new Error("Secret is required to decrypt the private key");
               }
             }
             // check if encrypted private key is available from storage
-            const storedPrivateKey = await storageProvider.getItem('hexa-private-key', this._secret);
+            const storedEncryptedPrivateKey = await storageProvider.getItem('hexa-private-key');
             // generate wallet from encrypted private key or generate new from random mnemonic
             const { 
               address, 
@@ -182,15 +183,24 @@ export class HexaConnect {
               provider, 
               publicKey, 
               privateKey 
-            } = storedPrivateKey
-            ? await evmWallet.generateWalletFromPrivateKey(
-                storedPrivateKey, 
-                this._ops?.chainId
+            } = storedEncryptedPrivateKey
+            // decrypt private key before generating wallet
+            ? await Crypto.decrypt(this._secret, storedEncryptedPrivateKey)
+                .then(storedPrivateKey => evmWallet.generateWalletFromPrivateKey(
+                  storedPrivateKey, 
+                  this._ops?.chainId
+                )
               )
+            // generate new wallet from random mnemonic
             : await evmWallet.generateWalletFromMnemonic()
               .then(async (wallet) => {
+                if (!this._secret) {
+                  await this.signout();
+                  throw new Error("Secret is required to encrypt the private key.");
+                }
                 // encrypt private key before storing it
-                await storageProvider.setItem('hexa-private-key', wallet.privateKey, this._secret||undefined);
+                const encryptedPrivateKey = await Crypto.encrypt(this._secret, wallet.privateKey);
+                await storageProvider.setItem('hexa-private-key', encryptedPrivateKey);
                 return wallet;
               });
             await this._setValues({ did, address, provider, publicKey, privateKey })
@@ -249,12 +259,17 @@ export class HexaConnect {
         if (detail === "connect-google") {
           try {
             const value = await this._dialogElement.promptPassword();
+            // If user already have a signature stored into Database,
+            // we validate the password with validation signature method.
+            // Otherwise we sign message with the password and store it in the Database
+            await passwordValidationOrSignature(value).execute();
+            // Now we can connect with Google
+            // and store the secret into inmemory class instance for further use
             this._secret = value;
             const { uid } = await this._authWithGoogle();
             await this._dialogElement.toggleIconAsCheck(detail);
             const encryptedSecret = await Crypto.encrypt(uid, this._secret);
-            console.log(`[INFO] Storage.setItem :  hexa-secret - `, encryptedSecret);
-            await storageProvider.setItem('hexa-secret', encryptedSecret, uid);
+            await storageProvider.setItem('hexa-secret', encryptedSecret);
             this._dialogElement.hideModal();
             resolve(this.userInfo);
           } catch (error: any) {

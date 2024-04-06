@@ -228,6 +228,45 @@ export default class Crypto {
     }
   }
 
+  public static async signMessageFromPassword(password: string, message: string): Promise<string> {
+    // generate key thath allow signature
+    const key = await window.crypto.subtle.importKey(
+      "raw",
+      Crypto.enc.encode(password),
+      { name: "HMAC", hash: { name: "SHA-256" } },
+      false,
+      ["sign"]
+    );
+    const signature = await window.crypto.subtle.sign({
+      name: "HMAC",
+      hash: { name: "SHA-256" },
+    }, key, Crypto.enc.encode(message));
+    return Crypto.base64Encode(new Uint8Array(signature));
+  }
+
+  public static async verifySignatureFromPassword(password: string, message: string, signature: string): Promise<boolean> {
+    const key = await window.crypto.subtle.importKey(
+      "raw",
+      Crypto.enc.encode(password),
+      { name: "HMAC", hash: { name: "SHA-256" } },
+      false,
+      ["verify"]
+    );
+    const result = await window.crypto.subtle.verify(
+      {
+        name: "HMAC",
+        hash: { name: "SHA-256" },
+      },
+      key,
+      new Uint8Array(Crypto.base64Decode(signature)),
+      Crypto.enc.encode(message)
+    );
+    return result;
+  }
+
+  /**
+   * @deprecated
+   */
   public static async generatePrivateKeyFromPassword(password: string): Promise<string> {
     const passwordKey = await window.crypto.subtle.importKey(
       "raw",

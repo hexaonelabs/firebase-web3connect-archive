@@ -2,9 +2,34 @@
 import { IStorageProvider } from "../../interfaces/storage-provider.interface";
 import Crypto from "../crypto/crypto";
 
+const generateBucketNameUsingWebGlSignature = () => {
+    const res: any[] = [];
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl2');
+    res.push(gl?.getParameter(gl.RENDERER));
+    res.push(gl?.getParameter(gl.VENDOR));
+    const dbgRenderInfo = gl?.getExtension('WEBGL_debug_renderer_info');
+    res.push(dbgRenderInfo?.UNMASKED_RENDERER_WEBGL);
+    res.push(dbgRenderInfo?.UNMASKED_VENDOR_WEBGL);
+    const encoded = new TextEncoder().encode(res.join(''));
+    return btoa(String.fromCharCode(...encoded));
+}
+
+const generateUIDUsingCanvasID = (): string => {
+  const canvas = document.createElement('canvas');
+  canvas.height = 100;
+  canvas.width = 800;
+  const ctx = canvas.getContext('2d');
+  if (ctx !== null) {
+    ctx.font = '30px Arial';
+    ctx?.fillText('Hello World', 20, 90);
+  }
+  return canvas.toDataURL().split(',').pop() as string;
+}
+
 const Environment = Object.freeze({
   applyEncryption: () => true,
-  encryptedKeyIndexKey: () => "hexa-key-index",
+  bucketName: generateBucketNameUsingWebGlSignature()
 });
 
 const isStringified = Object.freeze((input: string = "") => {
@@ -18,9 +43,34 @@ const isStringified = Object.freeze((input: string = "") => {
 class LocalStorage implements IStorageProvider {
   
   private _uid!: string;
-  private _encryptedKeyIndex = new Map<string, string>();
-  public setUid(value: string) {
-    this._uid = value;
+  private _inMemoryDB?: Map<string, string>;
+
+  public async initialize() {
+    const uid = generateUIDUsingCanvasID().slice(0, 16);
+    this._uid = uid;
+  }
+
+  private async _getDatabase(){
+    if (!this._inMemoryDB) {
+      const jsonString = window.localStorage.getItem(Environment.bucketName)||undefined;
+      const data = (Environment.applyEncryption() && this._uid && jsonString) 
+        ? await Crypto.decrypt(this._uid, jsonString)
+        : jsonString;
+      const arrayOfData = isStringified(data);
+      this._inMemoryDB = new Map<string, string>(arrayOfData);
+    }
+    return this._inMemoryDB as Map<string, string>;
+  }
+
+  private async _saveDatabase(){
+    if (!this._inMemoryDB) {
+      throw new Error("Database not initialized");
+    }
+    const jsonString = JSON.stringify(Array.from(this._inMemoryDB.entries()));
+    const data = (Environment.applyEncryption() && this._uid && jsonString) 
+      ? await Crypto.encrypt(this._uid, jsonString)
+      : jsonString;
+    window.localStorage.setItem(Environment.bucketName, data);
   }
 
   /**
@@ -28,24 +78,9 @@ class LocalStorage implements IStorageProvider {
    * @param key
    * @returns
    */
-  public  async getItem(key: string, passkey?: string): Promise<string | null> {
-    if (Environment.applyEncryption() && passkey) {
-      if (!this._encryptedKeyIndex.get(key)) {
-        const encryptedKeyIndex = await this._getAndDecryptEncryptedKeyIndex();
-        if (encryptedKeyIndex) {
-          this._encryptedKeyIndex = encryptedKeyIndex;
-        }
-      }
-      const encryptedKey = this._encryptedKeyIndex.get(key) as string;
-      const encryptedItem = window.localStorage.getItem(encryptedKey) || undefined;
-      return isStringified(
-        encryptedItem
-          ? await Crypto.decrypt(passkey, encryptedItem)
-          : encryptedItem
-      );
-    } else {
-      return isStringified( window.localStorage.getItem(key) || undefined);
-    }
+  public  async getItem(key: string): Promise<string | null> {
+    const result = await this._getDatabase().then(db => db.get(key));
+    return result || null;
   }
 
   /**
@@ -53,19 +88,12 @@ class LocalStorage implements IStorageProvider {
    * @param key
    * @param value
    */
-  public async setItem(key: string, value: string, passkey?: string): Promise<void> {
-    if (Environment.applyEncryption() && passkey && value && this._uid) {
-      const encodedKey = await Crypto.encrypt(this._uid, key);
-      this._encryptedKeyIndex.set(key, encodedKey);
-      // save encryptedKeyIndex to local storage
-      const mapIndex = JSON.stringify(Array.from(this._encryptedKeyIndex.entries()));
-      const encryptedItem = await Crypto.encrypt(passkey, value);
-      const encryptedMapIndex = await Crypto.encrypt(this._uid, mapIndex);
-      window.localStorage.setItem(Environment.encryptedKeyIndexKey(), encryptedMapIndex);
-      window.localStorage.setItem(encodedKey, encryptedItem);
-    } else {
-      window.localStorage.setItem(key, value);
+  public async setItem(key: string, value: string): Promise<void> {
+    if (!this._inMemoryDB) {
+      throw new Error("Database not initialized");
     }
+    this._inMemoryDB.set(key, value);
+    await this._saveDatabase();
   }
 
   /**
@@ -73,16 +101,13 @@ class LocalStorage implements IStorageProvider {
    * @param key
    */
   public async removeItem(key: string) {
-    if (Environment.applyEncryption() && this._uid) {
-      const encryptedKey = this._encryptedKeyIndex.get(key);
-      if (!encryptedKey) return;
-      window.localStorage.removeItem(encryptedKey);
-      this._encryptedKeyIndex.delete(key);
-      const mapIndex = JSON.stringify(Array.from(this._encryptedKeyIndex.entries()));
-      const encryptedMapIndex = await Crypto.encrypt(this._uid, mapIndex);
-      window.localStorage.setItem(Environment.encryptedKeyIndexKey(), encryptedMapIndex);
-    } else {
-      window.localStorage.removeItem(key);
+    if (!this._inMemoryDB) {
+      throw new Error("Database not initialized");
+    }
+    this._inMemoryDB.delete(key);
+    await this._saveDatabase();
+    if (this._inMemoryDB.size === 0) {
+      window.localStorage.removeItem(Environment.bucketName);
     }
   }
 
@@ -98,23 +123,15 @@ class LocalStorage implements IStorageProvider {
    *
    */
   public async clear() {
+    this._inMemoryDB = new Map<string, string>();
     window.localStorage.clear();
   }
 
   public async isExistingPrivateKeyStored() {
-    const encryptedMapIndexString = window.localStorage.getItem(Environment.encryptedKeyIndexKey());
+    const encryptedMapIndexString = window.localStorage.getItem(Environment.bucketName);
     return !!encryptedMapIndexString;
   }
 
-  private async _getAndDecryptEncryptedKeyIndex() {
-    const encryptedMapIndexString = window.localStorage.getItem(Environment.encryptedKeyIndexKey());
-    if (!encryptedMapIndexString) {
-      return;
-    }
-    const mapIndexString = await Crypto.decrypt(this._uid, encryptedMapIndexString);
-    const mapIndex = isStringified(mapIndexString);
-    return new Map(mapIndex) as Map<string, string>;
-  }
 }
 
 const storage: IStorageProvider = new LocalStorage();
