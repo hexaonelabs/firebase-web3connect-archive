@@ -348,7 +348,30 @@ export class HexaConnect {
                 break;
               case "import-privatekey":
                 // import private key
+                const {privateKey, secret} = await this._dialogElement.promptImportPrivatekey();
+                console.log(`[INFO] Import private key: `, {privateKey, secret});
+                if (!privateKey) {
+                  throw new Error("Private key is required to connect");
+                }
                 throw new Error("Method not implemented yet!");
+                // if (secret) {
+                //   this._secret = secret;
+                //   // encrypt private key before storing it
+                //   const encryptedPrivateKey = await Crypto.encrypt(this._secret, privateKey);
+                //   await storageProvider.setItem('hexa-private-key', encryptedPrivateKey);
+
+                //   // prompt to select authentication method 
+                //   const signinProvider = await this._dialogElement.promptAuthMethods();
+                //   const {uid} = await signinProvider.signIn(signinProvider);
+
+                //   // encrypt secret with user secret and store it
+                //   const encryptedSecret = await Crypto.encrypt(uid, this._secret);
+                //   await storageProvider.setItem('hexa-secret', encryptedSecret);
+
+                //   // close modal with animation and resolve the promise with user info
+                //   await this._dialogElement.toggleSpinnerAsCheck();
+                // }
+
                 break;
               default:
                 throw new Error("Invalid wallet type");

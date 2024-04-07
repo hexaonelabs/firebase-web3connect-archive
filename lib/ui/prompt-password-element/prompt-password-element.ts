@@ -2,12 +2,17 @@ import storageProvider from "../../providers/storage/local";
 
 export const promptPasswordElement = async (
   ref: HTMLElement, 
+  ops?: {
+    requestPwd?: boolean;
+  }
 ): Promise<string> => {
 
   const minPasswordLength = 4;
   const maxPasswordLength = 32;
 
-  const isCreating = !await storageProvider.isExistingPrivateKeyStored()
+  const isRequestPwd = ops?.requestPwd || false;
+  const isCreating = (!await storageProvider.isExistingPrivateKeyStored()) && (isRequestPwd !== true);
+  console.log('isCreating', isCreating, isRequestPwd);
 
   const isValideInputs = (inputPassword: HTMLInputElement, inputConfirme?: HTMLInputElement) => {
     if (!inputConfirme) {

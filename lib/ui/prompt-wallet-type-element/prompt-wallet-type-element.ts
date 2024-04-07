@@ -38,9 +38,9 @@ export const promptWalletTypeElement = async (  ref: HTMLElement
         // request `import-seed` or `import-privatekey`
         // based on user selection
         // this will be handled in the next step
-        resolve('import-seed');
+        resolve('import-privatekey');
         container.remove();
-        ref.style.display = 'block';
+        // ref.style.display = 'block';
       });
     });
 }

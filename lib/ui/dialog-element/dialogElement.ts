@@ -5,6 +5,7 @@ import { promptPasswordElement } from "../prompt-password-element/prompt-passwor
 import { promptToDownloadElement } from "../prompt-download-element/prompt-download-element";
 import { SpinnerElement } from "../spinner-element/spinner-element";
 import { promptWalletTypeElement } from "../prompt-wallet-type-element/prompt-wallet-type-element";
+import { promptImportPrivatekeyElement } from "../prompt-import-privatekey-element/prompt-import-privatekey-element";
 
 // export web component with shadowdom
 class HexaSigninDialogElement extends HTMLElement {
@@ -33,6 +34,9 @@ class HexaSigninDialogElement extends HTMLElement {
         <style>${css}</style>
         ${html}
     `;
+    // add spinner element to template content
+    (template.content.querySelector("#spinner") as HTMLElement).innerHTML = SpinnerElement();
+
     // disable buttons that are not enabled
     const buttons = template.content.querySelectorAll(".buttonsList button") as NodeListOf<HTMLButtonElement>;
     buttons.forEach((button) => {
@@ -69,6 +73,7 @@ class HexaSigninDialogElement extends HTMLElement {
     this.shadowRoot
       ?.querySelector("dialog")
       ?.addEventListener("click", async (event) => {
+        // filter event name `connect
         const button = (event.target as HTMLElement).closest("button");
         if (!button) return;
         // handle cancel
@@ -84,9 +89,15 @@ class HexaSigninDialogElement extends HTMLElement {
           // This will trigger the event and close the dialog
           return;
         }
-        // remove all btns and display loader with animation
-        const element = this.shadowRoot?.querySelector("dialog .buttonsList") as HTMLElement;
-        element.innerHTML = SpinnerElement();
+        // only button from connection type request
+        if (!button.id.includes("connect")) {
+          return;
+        }
+        // hide all btns and display loader with animation
+        const btnsElement = this.shadowRoot?.querySelector("dialog .buttonsList") as HTMLElement;
+        const spinnerElement = this.shadowRoot?.querySelector("dialog #spinner") as HTMLElement;
+        btnsElement.style.display = "none";
+        spinnerElement.style.display = "block";
 
         // emiting custome event to SDK
         switch (button.id) {
@@ -122,7 +133,7 @@ class HexaSigninDialogElement extends HTMLElement {
         resolve(true);
       }, 1500);
     });
-    const element = this.shadowRoot?.querySelector("dialog .buttonsList") as HTMLElement;
+    const element = this.shadowRoot?.querySelector("dialog #spinner") as HTMLElement;
     element.innerHTML = `
     <style>
     #check-group {
@@ -249,7 +260,7 @@ class HexaSigninDialogElement extends HTMLElement {
         resolve(true);
       }, 1500);
     });
-    const element = this.shadowRoot?.querySelector("dialog .buttonsList") as HTMLElement;
+    const element = this.shadowRoot?.querySelector("dialog #spinner") as HTMLElement;
     element.innerHTML = `
     <style>
     @keyframes stroke {
@@ -314,23 +325,36 @@ class HexaSigninDialogElement extends HTMLElement {
 
   public async promptPassword() {
     const value = await promptPasswordElement(
-      this.shadowRoot?.querySelector("dialog .buttonsList") as HTMLElement
+      this.shadowRoot?.querySelector("dialog #spinner") as HTMLElement
     );
     return value;
   }
 
   public async promptBackup() {
     const value = await promptToDownloadElement(
-      this.shadowRoot?.querySelector("dialog .buttonsList") as HTMLElement
+      this.shadowRoot?.querySelector("dialog #spinner") as HTMLElement
     );
     return value;
   }
 
   public async promptWalletType() {
     const value = await promptWalletTypeElement(
-      this.shadowRoot?.querySelector("dialog .buttonsList") as HTMLElement
+      this.shadowRoot?.querySelector("dialog #spinner") as HTMLElement
     );
     return value;
+  }
+
+  public async promptImportPrivatekey() {
+    const value = await promptImportPrivatekeyElement(
+      this.shadowRoot?.querySelector("dialog #spinner") as HTMLElement
+    );
+    return value;
+  }
+
+  public async promptAuthMethods() {
+    (this.shadowRoot?.querySelector("dialog #spinner") as HTMLElement).style.display = "none";
+    (this.shadowRoot?.querySelector("dialog .buttonsList") as HTMLElement).style.display = "block";
+
   }
 }
 
