@@ -167,7 +167,7 @@ export class HexaConnect {
           // so we call methode to connect with external wallet
           // then we set the wallet values
           // otherwise we set the wallet values from the user credential
-          if (user.isAnonymous) {
+          if (user.isAnonymous && !this.userInfo?.address) {
             const { did, address, provider }  = await evmWallet.connectWithExternalWallet();
             await this._setValues({ did, address, provider });
           } else {
@@ -452,6 +452,8 @@ export class HexaConnect {
 
   private async _authWithExternalWallet() {    
     try {
+      const { did, address, provider }  = await evmWallet.connectWithExternalWallet();
+      await this._setValues({ did, address, provider });
       await authProvider.signInAsAnonymous();
     } catch (error) {
       throw error;

@@ -12,7 +12,3 @@
   height: 28px;
   color: var(--text-color);
 }
-
-.prompt__wallet_type button span {
-  margin-left: 0.5rem;
-}

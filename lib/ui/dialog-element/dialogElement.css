@@ -95,6 +95,10 @@
   backdrop-filter: blur(1px);
 }
 
+:host dialog form {
+  width: 100%;
+}
+
 :host dialog svg#logo {
   margin: 2em auto 3rem;
   display: block;
@@ -186,7 +190,7 @@ a {
   cursor: not-allowed!important;
 }
 
-:host dialog button#connect-google svg {
+:host dialog button:not(#cancel) svg {
   margin-right: 8px;
 }
 
