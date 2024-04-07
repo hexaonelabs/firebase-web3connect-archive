@@ -335,12 +335,29 @@ export class HexaConnect {
         }
         if (detail === "connect-wallet") {
           try {
-            await this._authWithExternalWallet();
-            await this._dialogElement.toggleSpinnerAsCheck();
-            this._dialogElement.hideModal();
+            const walletType = await this._dialogElement.promptWalletType();
+            console.log(`[INFO] Wallet type: `, walletType);
+            switch (walletType) {
+              case "browser-extension":
+                await this._authWithExternalWallet();
+                await this._dialogElement.toggleSpinnerAsCheck();
+                break;
+              case "import-seed":
+                // import seed
+                throw new Error("Method not implemented yet!");
+                break;
+              case "import-privatekey":
+                // import private key
+                throw new Error("Method not implemented yet!");
+                break;
+              default:
+                throw new Error("Invalid wallet type");
+            }
+            // this._dialogElement.hideModal();
             resolve(this.userInfo);
           } catch (error: any) {
-            this._dialogElement.hideModal();
+            // this._dialogElement.hideModal();
+            await this._dialogElement.toggleSpinnerAsCross(error?.message);
             reject(
               new Error(
                 `Error while connecting with ${detail}: ${error?.message}`

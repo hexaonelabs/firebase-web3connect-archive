@@ -4,6 +4,7 @@ import { DEFAULT_SIGNIN_METHODS, SigninMethod } from "../../constant";
 import { promptPasswordElement } from "../prompt-password-element/prompt-password-element";
 import { promptToDownloadElement } from "../prompt-download-element/prompt-download-element";
 import { SpinnerElement } from "../spinner-element/spinner-element";
+import { promptWalletTypeElement } from "../prompt-wallet-type-element/prompt-wallet-type-element";
 
 // export web component with shadowdom
 class HexaSigninDialogElement extends HTMLElement {
@@ -320,6 +321,13 @@ class HexaSigninDialogElement extends HTMLElement {
 
   public async promptBackup() {
     const value = await promptToDownloadElement(
+      this.shadowRoot?.querySelector("dialog .buttonsList") as HTMLElement
+    );
+    return value;
+  }
+
+  public async promptWalletType() {
+    const value = await promptWalletTypeElement(
       this.shadowRoot?.querySelector("dialog .buttonsList") as HTMLElement
     );
     return value;
