@@ -132,6 +132,20 @@ class LocalStorage implements IStorageProvider {
     return !!encryptedMapIndexString;
   }
 
+  public async getBackup() {
+    // check if the database exist
+    const db = window.localStorage.getItem(Environment.bucketName);
+    if (!db) {
+      throw new Error("Database empty");
+    }
+    // get privateKey from the database
+    const enriptatePrivateKey = await this._getDatabase().then(db => db.get('hexa-private-key'));
+    if (!enriptatePrivateKey) {
+      throw new Error("Private key not found");
+    }
+    return enriptatePrivateKey;
+  }
+
 }
 
 const storage: IStorageProvider = new LocalStorage();

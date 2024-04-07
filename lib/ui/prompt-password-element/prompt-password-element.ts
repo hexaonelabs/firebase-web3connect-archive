@@ -1,7 +1,6 @@
-
 import storageProvider from "../../providers/storage/local";
 
-export const promptElement = async (
+export const promptPasswordElement = async (
   ref: HTMLElement, 
 ): Promise<string> => {
 
@@ -42,7 +41,7 @@ export const promptElement = async (
         margin: 0rem auto 0.5rem;
         text-align: center;
         color: var(--text-color);
-        background: var(--dialog-background-color);
+        background: var(--button-background);
         border: var(--dialog-border);
         border-radius: 12px;
         padding: 12px 16px;
@@ -103,7 +102,11 @@ export const promptElement = async (
     button.addEventListener('click', () => {
       resolve(inputPassword.value);
       container.remove();
-      ref.style.display = 'block';
+      // prevent flash ui. ref will be hiden to display backup step
+      // if is creating wallet. This is why we dont switch to display block
+      if (!isCreating) {
+        ref.style.display = 'block';
+      }
     });
     
     // manage validation of input to enable button
@@ -122,13 +125,3 @@ export const promptElement = async (
   });
 };
 
-
-
-
-
-
-// Please save your backup file and keep it properly as well as password. It ensures access to your funds.
-
-// Access to the wallet is possible only using both password and backup file.
-// Hexa Lite does not keep nor able to restore your backup and password. Only you have access to your wallet.
-// Never share it with anyone.

@@ -87,16 +87,23 @@ export class HexaConnect {
   }
 
   public async connectWithUI(isLightMode: boolean = false) {
+    // build UI
+    const dialogElement = await this._buildUI(isLightMode);
+    dialogElement.addEventListener("connect", async (e) => {
+
+    });
+    
     const result = await new Promise(
       async (
         resolve: (value: HexaConnect["userInfo"]) => void,
         reject: (err: Error) => void
       ) => {
+        if (!this._dialogElement) {
+          throw new Error("Dialog element not found");
+        }
         try {
-          // build UI
-          const dialogElement = await this._buildUI(isLightMode);
           // open modal
-          dialogElement.showModal();
+          this._dialogElement.showModal();
           // wait for connect event
           const result = await this._addAndWaitUIEventsResult();
           // resolve result
@@ -110,11 +117,11 @@ export class HexaConnect {
     });
     // wait 225ms to let the dialog close wth animation
     await new Promise((resolve) => setTimeout(resolve, 225));
-    // remove dialog element
-    this._dialogElement?.remove();
     if (result instanceof Error) {
       throw result;
     }
+    // remove dialog element
+    this._dialogElement?.remove();
     return result;
   }
 
@@ -203,6 +210,9 @@ export class HexaConnect {
                 await storageProvider.setItem('hexa-private-key', encryptedPrivateKey);
                 return wallet;
               });
+            // check local storage to existing tag to trigger download of the created private key
+            await this._checkReqestAndExecutBackup();
+            // set wallet values with the generated wallet
             await this._setValues({ did, address, provider, publicKey, privateKey })
           }
         } catch (error) {
@@ -263,33 +273,51 @@ export class HexaConnect {
             // we validate the password with validation signature method.
             // Otherwise we sign message with the password and store it in the Database
             await passwordValidationOrSignature(value).execute();
+
+            // if user is requesting to create new privatekey
+            const privateKey = await storageProvider.getItem('hexa-private-key');
+            if (!privateKey) {
+              // prompt message to download the privatekey that will be generated
+              // after the end of the authentication process
+              const { skip, withEncryption } = await this._dialogElement.promptBackup();
+              if (! skip) {
+                // store to local storage tag to trigger download of the private key
+                // when the user is connected (using listener onConnectStateChanged)
+                localStorage.setItem('hexa-backup', withEncryption ? 'true' : 'false');
+              }
+            }
+
             // Now we can connect with Google
             // and store the secret into inmemory class instance for further use
             this._secret = value;
             const { uid } = await this._authWithGoogle();
-            await this._dialogElement.toggleIconAsCheck(detail);
+            // encrypt secret with user secret and store it
             const encryptedSecret = await Crypto.encrypt(uid, this._secret);
             await storageProvider.setItem('hexa-secret', encryptedSecret);
+            // close modal with animation and resolve the promise with user info
+            await this._dialogElement.toggleSpinnerAsCheck();
             this._dialogElement.hideModal();
             resolve(this.userInfo);
           } catch (error: any) {
-            this._dialogElement.hideModal();
+            await this._dialogElement.toggleSpinnerAsCross(error?.message);
+            // this._dialogElement.hideModal();
             reject(
               new Error(
                 `Error while connecting with ${detail}: ${error?.message}`
               )
             );
+            return;
           }
         }
         if (detail === 'connect-email') {
           try {
-            const sub = this.onConnectStateChanged((user) => {
+            const sub = this.onConnectStateChanged(async (user) => {
               if (!this._dialogElement) {
                 throw new Error("Dialog element not found");
               }
               if (user) {
                 sub();
-                this._dialogElement.toggleIconAsCheck(detail);
+                await this._dialogElement.toggleSpinnerAsCheck();
                 this._dialogElement.hideModal();
                 resolve(this.userInfo);
               }
@@ -303,11 +331,12 @@ export class HexaConnect {
               )
             );
           }
+          return;
         }
         if (detail === "connect-wallet") {
           try {
             await this._authWithExternalWallet();
-            await this._dialogElement.toggleIconAsCheck(detail);
+            await this._dialogElement.toggleSpinnerAsCheck();
             this._dialogElement.hideModal();
             resolve(this.userInfo);
           } catch (error: any) {
@@ -317,12 +346,42 @@ export class HexaConnect {
                 `Error while connecting with ${detail}: ${error?.message}`
               )
             );
-          }             
+          }   
+          return;          
         }
         // default case is cancel
         this._dialogElement.hideModal();
+        this._dialogElement.remove();
         resolve(this.userInfo);
       });
+    });
+  }
+
+  private async _checkReqestAndExecutBackup() {
+    return new Promise(async (resolve) => {
+      const requestBackup = localStorage.getItem('hexa-backup');
+      if (requestBackup) {
+        const encriptedPrivateKey = await storageProvider.getBackup();
+        const withEncryption = requestBackup === 'true';
+        if (!this._secret && withEncryption) {
+          throw new Error("Secret is required to decrypt the private key");
+        }
+        const data = !withEncryption && this._secret
+          ? await Crypto.decrypt(this._secret, encriptedPrivateKey)
+          : encriptedPrivateKey;
+        console.log('[INFO] Backup data:', {data, withEncryption, encriptedPrivateKey});
+        const blob = new Blob([data], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        // use name formated with current date time like: hexa-backup-2021-08-01_12-00-00.txt
+        a.download = `hexa-backup-${new Date().toISOString().replace(/:/g, '-').split('.')[0]}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        localStorage.removeItem('hexa-backup');
+      }
+      resolve(true);
     });
   }
   
