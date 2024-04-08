@@ -13,21 +13,21 @@ export function setupAccountTab(element: HTMLDivElement, wallet: typeof hexaConn
     <button id="signout">signout</button>
   `;
 
-  element.querySelector("#sign")?.addEventListener("click", async () => {
-    const contentElement = element.querySelector("#content") as HTMLInputElement;
-    signature = await wallet.signMessage(`${contentElement?.value}`);
-    console.log({ signature });
-  });
+  // element.querySelector("#sign")?.addEventListener("click", async () => {
+  //   const contentElement = element.querySelector("#content") as HTMLInputElement;
+  //   signature = await wallet.signMessage(`${contentElement?.value}`);
+  //   console.log({ signature });
+  // });
 
-  element.querySelector("#verify")?.addEventListener("click", async () => {
-    const contentElement = element.querySelector("#content") as HTMLInputElement;
-    // Verify the signature with address
-    const isValid = wallet.verifySignature(
-      `${contentElement?.value}`,
-      signature
-    );
-    console.log("Signature is valid:", isValid);
-  });
+  // element.querySelector("#verify")?.addEventListener("click", async () => {
+  //   const contentElement = element.querySelector("#content") as HTMLInputElement;
+  //   // Verify the signature with address
+  //   const isValid = wallet.verifySignature(
+  //     `${contentElement?.value}`,
+  //     signature
+  //   );
+  //   console.log("Signature is valid:", isValid);
+  // });
 
   element.querySelector("#signout")?.addEventListener("click", async () => {
     await wallet.signout();

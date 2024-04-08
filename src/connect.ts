@@ -8,6 +8,9 @@ export function setupConnectTab(element: HTMLDivElement) {
   element.querySelector("#connectUI")?.addEventListener("click", async () => {
     await hexaConnect
     .connectWithUI(true)
+    .then((userInfo) => {
+      console.log('connected with UI: ', userInfo);
+    })
     .catch((err) => {
       console.error('error from component app; ',err);
     });

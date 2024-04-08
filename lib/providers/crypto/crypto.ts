@@ -221,10 +221,11 @@ export default class Crypto {
 
       // Returns the result of running encoding's decoder.
       return Crypto.dec.decode(decryptedContent);
-    } catch (error) {
-      // if any expection occurs
-      console.error(`Error - ${error}`);
-      return "";
+    } catch (error: any) {
+      // // if any expection occurs
+      // console.error(`Error - ${error}`);
+      // return "";
+      throw new Error(error?.message || "Error while decrypting data. <br/>Invalid secret or content.");
     }
   }
 

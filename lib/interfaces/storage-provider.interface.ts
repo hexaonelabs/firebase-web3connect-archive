@@ -6,5 +6,6 @@ export interface IStorageProvider {
   removeItem(key: string): Promise<void>;
   clear(): Promise<void>;
   isExistingPrivateKeyStored(): Promise<boolean>;
-  getBackup(): Promise<string>;
+  executeBackup(requestBackup: boolean, secret?: string): Promise<void>;
+  getUniqueID(): string;
 }

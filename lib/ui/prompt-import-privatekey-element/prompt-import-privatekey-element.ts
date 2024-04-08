@@ -6,20 +6,19 @@ export const promptImportPrivatekeyElement = async (
   ref: HTMLElement
 ): Promise<{
   privateKey: string;
-  secret?: string;
+  secret: string;
 }> => {
   const container = document.createElement('div');
   container.classList.add('prompt-container');
   ref.after(container);
   ref.style.display = 'none';
   container.innerHTML = `
-    <style>
-      
-    </style>
     <div class="prompt__import_file">
-      <p>Import Privatekey backup file</p>
+      <p>
+        <b>Import Privatekey backup file</b>
+      </p>
       <div class="prompt__import_file__result"></div>
-      ${CheckboxElement()}
+      ${CheckboxElement('Encrypted backup file')}
       <button id="button__import_privatekey">
         <span>Import</span>
       </button>
@@ -33,8 +32,8 @@ export const promptImportPrivatekeyElement = async (
   
   const resutl = await new Promise<{
     privateKey: string;
-    secret?: string;
-  }>((resolve) => {
+    secret: string;
+  }>((resolve, reject) => {
     buttonImportPrivatekey.addEventListener('click', (e) => {
       e.preventDefault();
       inputImportFile.click();
@@ -43,23 +42,29 @@ export const promptImportPrivatekeyElement = async (
     inputImportFile.addEventListener('change', async () => {
       const file = inputImportFile.files?.[0];
       if (!file) return;
-      const resultElement = container.querySelector('.prompt__import_file__result') as HTMLElement;
-      resultElement.innerHTML = 'Loading...';
-      const content = await file.text();
-      const isEncrypted = toggleEncription.checked;
-      if (isEncrypted) {
-        const secret = await promptPasswordElement(container, {requestPwd: true});
-        const privateKey = await Crypto.decrypt(secret, content)
-        resultElement.innerHTML = privateKey;
-        resolve({secret, privateKey});
-      } else {
-        resultElement.innerHTML = content;
-        resolve({
-          privateKey: content
-        });
+      try {
+        const content = await file.text();
+        const isEncrypted = toggleEncription.checked;
+        if (isEncrypted) {
+          const secret = await promptPasswordElement(container, {requestPwd: true});
+          const privateKey = await Crypto.decrypt(secret, content)
+          resolve({secret, privateKey});
+        } else {
+          // request new password to encrypt the private key before store it.
+          const secret = await promptPasswordElement(container);
+          resolve({
+            secret,
+            privateKey: content
+          });
+        }
+        container.remove();
+        ref.style.display = 'block';
+        
+      } catch (error) {
+        reject(error);       
+        container.remove();
+        ref.style.display = 'block';
       }
-      container.remove();
-      ref.style.display = 'block';
     });
   });
 

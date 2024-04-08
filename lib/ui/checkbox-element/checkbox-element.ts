@@ -1,5 +1,5 @@
 
-export const CheckboxElement = () => {
+export const CheckboxElement = (label?: string) => {
   return `
     <style>
     
@@ -48,7 +48,7 @@ export const CheckboxElement = () => {
     </style>
     <div class="checkbox__container">
       <input type="checkbox" id="toggle__encription" name="toggle__encription" checked="true">
-      <label for="toggle__encription">Encrypt backup file</label>
+      <label for="toggle__encription">${ label ? label : 'Encrypt backup file'}</label>
     </div>
   `;
 }
