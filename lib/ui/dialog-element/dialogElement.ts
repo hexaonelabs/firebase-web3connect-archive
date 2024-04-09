@@ -1,6 +1,6 @@
 import html from "./dialogElement.html?raw";
 import css from "./dialogElement.css?raw";
-import { DEFAULT_SIGNIN_METHODS, SigninMethod } from "../../constant";
+import { DEFAULT_SIGNIN_METHODS, KEYS, SigninMethod } from "../../constant";
 import { promptPasswordElement } from "../prompt-password-element/prompt-password-element";
 import { promptToDownloadElement } from "../prompt-download-element/prompt-download-element";
 import { SpinnerElement } from "../spinner-element/spinner-element";
@@ -417,7 +417,7 @@ const addAndWaitUIEventsResult = (dialogElement: HexaSigninDialogElement): Promi
         try {
           const password = await dialogElement.promptPassword();
           // prompt to download private key if not already stored
-          const privateKey = await storageProvider.getItem('hexa-private-key');
+          const privateKey = await storageProvider.getItem(KEYS.STORAGE_PRIVATEKEY_KEY);
           const {withEncryption, skip} = !privateKey
             ? await dialogElement.promptBackup()
             : {withEncryption: false, skip: true};
