@@ -1,5 +1,5 @@
 {
-  "name": "@hexaonelabs/web3connect",
+  "name": "@hexaonelabs/firebase-web3connect",
   "private": false,
   "version": "0.0.0",
   "type": "module",
