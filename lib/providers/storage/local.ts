@@ -1,4 +1,5 @@
 
+import { KEYS } from "../../constant";
 import { IStorageProvider } from "../../interfaces/storage-provider.interface";
 import Crypto from "../crypto/crypto";
 
@@ -145,7 +146,7 @@ class LocalStorage implements IStorageProvider {
       throw new Error("Database empty");
     }
     // get privateKey from the database
-    const enriptatePrivateKey = await this._getDatabase().then(db => db.get('hexa-private-key'));
+    const enriptatePrivateKey = await this._getDatabase().then(db => db.get(KEYS.STORAGE_PRIVATEKEY_KEY));
     if (!enriptatePrivateKey) {
       throw new Error("Private key not found");
     }
@@ -172,7 +173,7 @@ class LocalStorage implements IStorageProvider {
     a.click();
     URL.revokeObjectURL(url);
     await new Promise((resolve) => setTimeout(resolve, 500));
-    localStorage.removeItem('hexa-backup');
+    localStorage.removeItem(KEYS.STORAGE_BACKUP_KEY);
   }
 
 }

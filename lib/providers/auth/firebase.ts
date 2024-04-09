@@ -16,6 +16,7 @@ import {
   User,
 } from 'firebase/auth';
 import { IAuthProvider } from '../../interfaces/auth-provider.interface';
+import { KEYS } from '../../constant';
 
 let auth!: Auth;
 
@@ -48,7 +49,7 @@ const sendLinkToEmail = async (email: string) => {
           // The link was successfully sent. Inform the user.
           // Save the email locally so you don't need to ask the user for it again
           // if they open the link on the same device.
-          window.localStorage.setItem('hexaconnect_emailForSignIn', email);
+          window.localStorage.setItem(KEYS.STORAGE_EMAIL_FOR_SIGNIN_KEY, email);
         });
     } catch (err) {
       throw err;
@@ -65,7 +66,7 @@ const signInWithLink = async ()=> {
   // the sign-in operation.
   // Get the email if available. This should be available if the user completes
   // the flow on the same device where they started it.
-  let email = window.localStorage.getItem('hexaconnect_emailForSignIn');
+  let email = window.localStorage.getItem(KEYS.STORAGE_EMAIL_FOR_SIGNIN_KEY);
   if (!email) {
     // User opened the link on a different device. To prevent session fixation
     // attacks, ask the user to provide the associated email again. For example:

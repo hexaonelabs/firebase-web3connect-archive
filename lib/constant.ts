@@ -248,3 +248,12 @@ const NETWORK_DEFAULT = NETWORK.optimism;
 export const CHAIN_DEFAULT = CHAIN_AVAILABLES.find(c => c.id === NETWORK_DEFAULT) || {
   id: NETWORK_DEFAULT, name: 'default', value: 'default', rpcUrl: '', type: 'evm'
 };
+
+export enum KEYS {
+  AUTH_SIGNATURE_KEY = "hexa-signature",
+  AUTH_SIGNATURE_VALUE = "hexa-signature-value",
+  STORAGE_PRIVATEKEY_KEY = "hexa-private-key",
+  STORAGE_SECRET_KEY = "hexa-secret",
+  STORAGE_BACKUP_KEY = "hexa-backup",
+  STORAGE_EMAIL_FOR_SIGNIN_KEY = "hexa-connect-email-for-sign-in",
+}

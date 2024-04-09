@@ -5,7 +5,7 @@ import storageProvider from "./providers/storage/local";
 import "./ui/dialog-element/dialogElement";
 import { HexaSigninDialogElement, addAndWaitUIEventsResult, setupSigninDialogElement } from "./ui/dialog-element/dialogElement";
 import { FirebaseOptions } from "firebase/app";
-import { CHAIN_DEFAULT, DEFAULT_SIGNIN_METHODS, SigninMethod } from "./constant";
+import { CHAIN_DEFAULT, DEFAULT_SIGNIN_METHODS, KEYS, SigninMethod } from "./constant";
 import Crypto from "./providers/crypto/crypto";
 import { IStorageProvider } from "./interfaces/storage-provider.interface";
 import { passwordValidationOrSignature } from "./providers/crypto/password";
@@ -131,7 +131,7 @@ export class HexaConnect {
   }
 
   public async signout() {
-    await storageProvider.removeItem('hexa-secret');
+    await storageProvider.removeItem(KEYS.STORAGE_SECRET_KEY);
     await authProvider.signOut();
   }
 
