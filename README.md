@@ -12,6 +12,14 @@ By plugging Firebase Web3Connect into your Firebase project, you unlock a world 
 
 Experience the simplicity of integrating Web3 authentication with Firebase Authentication. With Firebase Web3Connect, connecting your Web3 application to Firebase has never been easier. Get started today and elevate your Web3 authentication experience with Firebase Web3Connect. 🔐🌐
 
+## UI Overview
+
+<!-- image overview with max size 300px-->
+<p align="center">
+  <img src="./public/firebase-web3connect-light.png" alt="Image 1" width="350" />
+  <img src="./public/firebase-web3connect-dark.png" alt="Image 2" width="350" />
+</p>
+
 ## Features
 
 - **Seamless Integration:** Easily plug Web3 authentication into your Firebase project.
