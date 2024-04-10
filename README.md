@@ -23,7 +23,17 @@ Experience the simplicity of integrating Web3 authentication with Firebase Authe
 
 ## Getting Started
 
-To get started with Firebase Web3Connect, follow these steps:
+Firebase Web3Connect is designed to be easy to integrate into your Firebase project.
+Simply create or use an existing Firebase project, configure Firebase Web3Connect with your Firebase project settings using Authentication Service, and start using Firebase Web3Connect to authenticate users with Web3 wallets.
+
+### **Prerequisites:**
+
+Before you begin, ensure you have the following prerequisites:
+
+- A Firebase project with Firebase Authentication enabled.
+- Setup desired sign-in methods in Firebase Authentication settings.
+- A application or DApp that you want to integrate with Firebase Authentication.
+- Basic knowledge of JavaScript and Firebase.
 
 ### **1. Installation:**
 
@@ -40,10 +50,11 @@ yarn add @hexaonelabs/firebase-web3connect
 Configure Firebase Web3Connect with your Firebase project settings.
 
 ```javascript
-import { FirebaseWeb3Connect, SigninMethod } from '@hexaonelabs/firebase-web3connect';
-// Import the functions you need from the SDKs you need
 import { FirebaseOptions, initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
+
+// Import FirebaseWeb3Connect from the package
+import { FirebaseWeb3Connect, SigninMethod } from '@hexaonelabs/firebase-web3connect';
 
 const firebaseConfig: FirebaseOptions = {
   // Your Firebase configuration here
@@ -56,6 +67,8 @@ const auth = getAuth(app);
 
 // create local instance of FirebaseWeb3Connect
 const firebaseWeb3Connect = new FirebaseWeb3Connect(auth, APIKEY);
+// now you can use `firebaseWeb3Connect` to connect and manage users with Web3 wallets
+
 ```
 
 ### **3. Usage:**
@@ -88,7 +101,8 @@ firebaseWeb3Connect.onConnectStateChanged(async user => {
 
 ### **4. Documentation:**
 
-Explore the Firebase Web3Connect documentation for more detailed usage instructions and examples.
+For detailed documentation and API reference, please refer to the [Firebase Documentation](https://firebase.google.com/docs).
+You can also refer to the `Firebase Web3Connect demo` for a working example of Firebase Web3Connect in action into the `src` directory.
 
 ## Contributing
 
