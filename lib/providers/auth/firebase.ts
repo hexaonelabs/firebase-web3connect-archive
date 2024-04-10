@@ -80,7 +80,7 @@ const signInWithLink = async () => {
 };
 
 const signInAsAnonymous = async () => {
-	await signInAnonymously(auth);
+	return await signInAnonymously(auth);
 };
 
 const signOut = async () => {

@@ -1,142 +1,161 @@
-import html from "./dialogElement.html?raw";
-import css from "./dialogElement.css?raw";
-import { DEFAULT_SIGNIN_METHODS, KEYS, SigninMethod } from "../../constant";
-import { promptPasswordElement } from "../prompt-password-element/prompt-password-element";
-import { promptToDownloadElement } from "../prompt-download-element/prompt-download-element";
-import { SpinnerElement } from "../spinner-element/spinner-element";
-import { promptWalletTypeElement } from "../prompt-wallet-type-element/prompt-wallet-type-element";
-import { promptImportPrivatekeyElement } from "../prompt-import-privatekey-element/prompt-import-privatekey-element";
-import storageProvider from "../../providers/storage/local";
-import { authByImportPrivateKey, authWithExternalWallet, authWithGoogle } from "../../services/auth.servcie";
+import html from './dialogElement.html?raw';
+import css from './dialogElement.css?raw';
+import { DEFAULT_SIGNIN_METHODS, KEYS, SigninMethod } from '../../constant';
+import { promptPasswordElement } from '../prompt-password-element/prompt-password-element';
+import { promptToDownloadElement } from '../prompt-download-element/prompt-download-element';
+import { SpinnerElement } from '../spinner-element/spinner-element';
+import { promptWalletTypeElement } from '../prompt-wallet-type-element/prompt-wallet-type-element';
+import { promptImportPrivatekeyElement } from '../prompt-import-privatekey-element/prompt-import-privatekey-element';
+import storageProvider from '../../providers/storage/local';
+import {
+	authByImportPrivateKey,
+	authWithExternalWallet,
+	authWithGoogle
+} from '../../services/auth.servcie';
 
 // export web component with shadowdom
 class HexaSigninDialogElement extends HTMLElement {
-  constructor() {
-    super();
-    const integrator = this.getAttribute("integrator")
-      ? "Sign in to" + this.getAttribute("integrator")
-      : "Sign in using HexaConnect";
-    // get enabled signin methods. If not provided, all methods are enabled by default
-    const enabledMethods = this.getAttribute("signin-methods")
-      ? this.getAttribute("signin-methods")
-          ?.split(",")
-          ?.filter(
-            (method): method is typeof DEFAULT_SIGNIN_METHODS[number] =>
-              method !== undefined
-          ) || DEFAULT_SIGNIN_METHODS
-      : DEFAULT_SIGNIN_METHODS;
-    // build shadow dom
-    const shadow = this.attachShadow({ mode: "open" });
-    if (!shadow) {
-      throw new Error("ShadowDOM not supported");
-    }
-    // create template element
-    const template = document.createElement("template");
-    template.innerHTML = `
+	constructor() {
+		super();
+		const integrator = this.getAttribute('integrator')
+			? 'Sign in to' + this.getAttribute('integrator')
+			: 'Sign in using HexaConnect';
+		// get enabled signin methods. If not provided, all methods are enabled by default
+		const enabledMethods = this.getAttribute('signin-methods')
+			? this.getAttribute('signin-methods')
+					?.split(',')
+					?.filter(
+						(method): method is (typeof DEFAULT_SIGNIN_METHODS)[number] =>
+							method !== undefined
+					) || DEFAULT_SIGNIN_METHODS
+			: DEFAULT_SIGNIN_METHODS;
+		// build shadow dom
+		const shadow = this.attachShadow({ mode: 'open' });
+		if (!shadow) {
+			throw new Error('ShadowDOM not supported');
+		}
+		// create template element
+		const template = document.createElement('template');
+		template.innerHTML = `
         <style>${css}</style>
         ${html}
     `;
-    // add spinner element to template content
-    (template.content.querySelector("#spinner") as HTMLElement).innerHTML = SpinnerElement();
+		// add spinner element to template content
+		(template.content.querySelector('#spinner') as HTMLElement).innerHTML =
+			SpinnerElement();
 
-    // disable buttons that are not enabled
-    const buttons = template.content.querySelectorAll(".buttonsList button") as NodeListOf<HTMLButtonElement>;
-    buttons.forEach((button) => {
-      if (!enabledMethods.includes(button.id as typeof enabledMethods[number])) {
-        button.remove();
-      }
-    });
-    // remove `or` tage if google is not enabled
-    if (!enabledMethods.includes(SigninMethod.Google) || enabledMethods.includes(SigninMethod.Google) && enabledMethods.length === 1) {
-      template.content.querySelector(".or")?.remove();
-    }
-    // finaly add template to shadow dom
-    shadow.appendChild(template.content.cloneNode(true));
-    // replace tags from html with variables
-    const variables = [{ tag: "integrator", value: integrator }];
-    variables.forEach((variable) => {
-      shadow.innerHTML = shadow.innerHTML.replace(
-        new RegExp(`{{${variable.tag}}}`, "g"),
-        variable.value
-      );
-    });
-  }
+		// disable buttons that are not enabled
+		const buttons = template.content.querySelectorAll(
+			'.buttonsList button'
+		) as NodeListOf<HTMLButtonElement>;
+		buttons.forEach(button => {
+			if (
+				!enabledMethods.includes(button.id as (typeof enabledMethods)[number])
+			) {
+				button.remove();
+			}
+		});
+		// remove `or` tage if google is not enabled
+		if (
+			!enabledMethods.includes(SigninMethod.Google) ||
+			(enabledMethods.includes(SigninMethod.Google) &&
+				enabledMethods.length === 1)
+		) {
+			template.content.querySelector('.or')?.remove();
+		}
+		// finaly add template to shadow dom
+		shadow.appendChild(template.content.cloneNode(true));
+		// replace tags from html with variables
+		const variables = [{ tag: 'integrator', value: integrator }];
+		variables.forEach(variable => {
+			shadow.innerHTML = shadow.innerHTML.replace(
+				new RegExp(`{{${variable.tag}}}`, 'g'),
+				variable.value
+			);
+		});
+	}
 
-  public showModal(): void {
-    this.shadowRoot?.querySelector("dialog")?.showModal();
-  }
+	public showModal(): void {
+		this.shadowRoot?.querySelector('dialog')?.showModal();
+	}
 
-  public hideModal(): void {
-    this.shadowRoot?.querySelector("dialog")?.close();
-  }
+	public hideModal(): void {
+		this.shadowRoot?.querySelector('dialog')?.close();
+	}
 
-  // manage events from shadow dom
-  public connectedCallback() {
-    this.shadowRoot
-      ?.querySelector("dialog")
-      ?.addEventListener("click", async (event) => {
-        // filter event name `connect
-        const button = (event.target as HTMLElement).closest("button");
-        if (!button) return;
-        // handle cancel
-        if (button.id === "cancel") {
-          this.dispatchEvent(
-            new CustomEvent("connect", {
-              detail: button.id,
-            })
-          );
-          // stop further execution of code
-          // as we don't want to show loading on cancel
-          // and we don't want to show connected on cancel.
-          // This will trigger the event and close the dialog
-          return;
-        }
-        // only button from connection type request
-        if (!button.id.includes("connect")) {
-          return;
-        }
-        // hide all btns and display loader with animation
-        const btnsElement = this.shadowRoot?.querySelector("dialog .buttonsList") as HTMLElement;
-        const spinnerElement = this.shadowRoot?.querySelector("dialog #spinner") as HTMLElement;
-        btnsElement.style.display = "none";
-        spinnerElement.style.display = "block";
+	// manage events from shadow dom
+	public connectedCallback() {
+		this.shadowRoot
+			?.querySelector('dialog')
+			?.addEventListener('click', async event => {
+				// filter event name `connect
+				const button = (event.target as HTMLElement).closest('button');
+				if (!button) return;
+				// handle cancel
+				if (button.id === 'cancel') {
+					this.dispatchEvent(
+						new CustomEvent('connect', {
+							detail: button.id
+						})
+					);
+					// stop further execution of code
+					// as we don't want to show loading on cancel
+					// and we don't want to show connected on cancel.
+					// This will trigger the event and close the dialog
+					return;
+				}
+				// only button from connection type request
+				if (!button.id.includes('connect')) {
+					return;
+				}
+				// hide all btns and display loader with animation
+				const btnsElement = this.shadowRoot?.querySelector(
+					'dialog .buttonsList'
+				) as HTMLElement;
+				const spinnerElement = this.shadowRoot?.querySelector(
+					'dialog #spinner'
+				) as HTMLElement;
+				btnsElement.style.display = 'none';
+				spinnerElement.style.display = 'block';
 
-        // emiting custome event to SDK
-        switch (button.id) {
-          case "connect-google":
-            this.dispatchEvent(
-              new CustomEvent("connect", {
-                detail: button.id,
-              })
-            );
-            break;
-          case "connect-email":
-            this.dispatchEvent(
-              new CustomEvent("connect", {
-                detail: button.id,
-              })
-            );
-            break;
-          case "connect-wallet":
-            this.dispatchEvent(
-              new CustomEvent("connect", {
-                detail: button.id,
-              })
-            );
-            break;
-        }
-      });
-  }
+				// emiting custome event to SDK
+				switch (button.id) {
+					case 'connect-google':
+						this.dispatchEvent(
+							new CustomEvent('connect', {
+								detail: button.id
+							})
+						);
+						break;
+					case 'connect-email':
+						this.dispatchEvent(
+							new CustomEvent('connect', {
+								detail: button.id
+							})
+						);
+						break;
+					case 'connect-wallet':
+						this.dispatchEvent(
+							new CustomEvent('connect', {
+								detail: button.id
+							})
+						);
+						break;
+				}
+			});
+	}
 
-  public async toggleSpinnerAsCheck(): Promise<boolean> {
-    await new Promise((resolve) => {
-      const t = setTimeout(() => {
-        clearTimeout(t);
-        resolve(true);
-      }, 1500);
-    });
-    const element = this.shadowRoot?.querySelector("dialog #spinner") as HTMLElement;
-    element.innerHTML = `
+	public async toggleSpinnerAsCheck(): Promise<boolean> {
+		await new Promise(resolve => {
+			const t = setTimeout(() => {
+				clearTimeout(t);
+				resolve(true);
+			}, 1500);
+		});
+		const element = this.shadowRoot?.querySelector(
+			'dialog #spinner'
+		) as HTMLElement;
+		element.innerHTML = `
     <style>
     #check-group {
       animation: 0.32s ease-in-out 1.03s check-group;
@@ -245,25 +264,27 @@ class HexaSigninDialogElement extends HTMLElement {
       </g>
     </svg>
     `;
-    return new Promise((resolve) => {
-      const t = setTimeout(() => {
-        clearTimeout(t);
-        resolve(true);
-      }, 1800);
-    });
-  }
+		return new Promise(resolve => {
+			const t = setTimeout(() => {
+				clearTimeout(t);
+				resolve(true);
+			}, 1800);
+		});
+	}
 
-  public async toggleSpinnerAsCross(
-    message: string = 'An error occured. Please try again.'
-  ): Promise<boolean> {
-    await new Promise((resolve) => {
-      const t = setTimeout(() => {
-        clearTimeout(t);
-        resolve(true);
-      }, 1500);
-    });
-    const element = this.shadowRoot?.querySelector("dialog #spinner") as HTMLElement;
-    element.innerHTML = `
+	public async toggleSpinnerAsCross(
+		message: string = 'An error occured. Please try again.'
+	): Promise<boolean> {
+		await new Promise(resolve => {
+			const t = setTimeout(() => {
+				clearTimeout(t);
+				resolve(true);
+			}, 1500);
+		});
+		const element = this.shadowRoot?.querySelector(
+			'dialog #spinner'
+		) as HTMLElement;
+		element.innerHTML = `
     <style>
     @keyframes stroke {
       100% {
@@ -317,191 +338,216 @@ class HexaSigninDialogElement extends HTMLElement {
     </svg>
     <p class="cross__message">${message}</p>
     `;
-    return new Promise((resolve) => {
-      const t = setTimeout(() => {
-        clearTimeout(t);
-        resolve(true);
-      }, 1800);
-    });
-  }
+		return new Promise(resolve => {
+			const t = setTimeout(() => {
+				clearTimeout(t);
+				resolve(true);
+			}, 1800);
+		});
+	}
 
-  public async promptPassword() {
-    const value = await promptPasswordElement(
-      this.shadowRoot?.querySelector("dialog #spinner") as HTMLElement
-    );
-    return value;
-  }
+	public async promptPassword() {
+		const value = await promptPasswordElement(
+			this.shadowRoot?.querySelector('dialog #spinner') as HTMLElement
+		);
+		return value;
+	}
 
-  public async promptBackup() {
-    const value = await promptToDownloadElement(
-      this.shadowRoot?.querySelector("dialog #spinner") as HTMLElement
-    );
-    return value;
-  }
+	public async promptBackup() {
+		const value = await promptToDownloadElement(
+			this.shadowRoot?.querySelector('dialog #spinner') as HTMLElement
+		);
+		return value;
+	}
 
-  public async promptWalletType() {
-    const value = await promptWalletTypeElement(
-      this.shadowRoot?.querySelector("dialog #spinner") as HTMLElement
-    );
-    return value;
-  }
+	public async promptWalletType() {
+		const value = await promptWalletTypeElement(
+			this.shadowRoot?.querySelector('dialog #spinner') as HTMLElement
+		);
+		return value;
+	}
 
-  public async promptAuthMethods() {
-    (this.shadowRoot?.querySelector("dialog #spinner") as HTMLElement).style.display = "none";
-    (this.shadowRoot?.querySelector("dialog .buttonsList") as HTMLElement).style.display = "block";
-
-  }
-  
+	public async promptAuthMethods() {
+		(
+			this.shadowRoot?.querySelector('dialog #spinner') as HTMLElement
+		).style.display = 'none';
+		(
+			this.shadowRoot?.querySelector('dialog .buttonsList') as HTMLElement
+		).style.display = 'block';
+	}
 }
-
 
 const setupSigninDialogElement = (
-  ref: HTMLElement = document.body, 
-  ops: {
-    enabledSigninMethods: SigninMethod[] | undefined;
-    isLightMode: boolean;
-  }
-  ) => {
-    // check if element already defined
-    if (!customElements.get("hexa-signin-dialog")) {
-      customElements.define("hexa-signin-dialog", HexaSigninDialogElement);
-    }
-    // extract options
-    const {
-      isLightMode = true,
-      enabledSigninMethods = DEFAULT_SIGNIN_METHODS,
-    } = ops||{};
-    // insert webcomponent element to DOM
-    ref.insertAdjacentHTML(
-      "beforeend",
-      `<hexa-signin-dialog 
+	ref: HTMLElement = document.body,
+	ops: {
+		enabledSigninMethods: SigninMethod[] | undefined;
+		isLightMode: boolean;
+	}
+) => {
+	// check if element already defined
+	if (!customElements.get('hexa-signin-dialog')) {
+		customElements.define('hexa-signin-dialog', HexaSigninDialogElement);
+	}
+	// extract options
+	const { isLightMode = true, enabledSigninMethods = DEFAULT_SIGNIN_METHODS } =
+		ops || {};
+	// insert webcomponent element to DOM
+	ref.insertAdjacentHTML(
+		'beforeend',
+		`<hexa-signin-dialog 
         id="hexa-wallet-connectWithUI-dialog" 
-        signin-methods="${enabledSigninMethods?.join(",")}"
+        signin-methods="${enabledSigninMethods?.join(',')}"
         theme="${isLightMode ? 'light' : 'dark'}" />`
-    );
-    // check if element is inserted properly
-    const dialogElement = document.getElementById(
-      "hexa-wallet-connectWithUI-dialog"
-    ) as HexaSigninDialogElement;
-    if (!dialogElement) {
-      throw new Error("Error while building UI: Dialog element not found");
-    }
-    // return dialog element
-    return dialogElement;
-}
+	);
+	// check if element is inserted properly
+	const dialogElement = document.getElementById(
+		'hexa-wallet-connectWithUI-dialog'
+	) as HexaSigninDialogElement;
+	if (!dialogElement) {
+		throw new Error('Error while building UI: Dialog element not found');
+	}
+	// return dialog element
+	return dialogElement;
+};
 
-const addAndWaitUIEventsResult = (dialogElement: HexaSigninDialogElement): Promise<{
-  uid: string;
-  isAnonymous?: boolean;
-  password?: string;
-}|undefined> => {
-  return new Promise(
-    async (
-      resolve: (value: {uid: string; password: string}|undefined) => void,
-      reject: (err: Error) => void
-  ) => {
-    // listen to connect event
-    dialogElement.addEventListener("connect", async (e) => {
-      const detail = (e as CustomEvent<string>).detail;
-      console.log(`[INFO] connect event: `, detail);
-      // exclude cancel event {
-      if (detail === "cancel") {
-        dialogElement.hideModal();
-        await new Promise((resolve) => setTimeout(resolve, 225));
-        dialogElement.remove();
-        resolve(undefined); 
-        return;
-      }
-      // handle type of connection request
-      if (detail === "connect-google") {
-        try {
-          const password = await dialogElement.promptPassword();
-          // prompt to download private key if not already stored
-          const privateKey = await storageProvider.getItem(KEYS.STORAGE_PRIVATEKEY_KEY);
-          const {withEncryption, skip} = !privateKey
-            ? await dialogElement.promptBackup()
-            : {withEncryption: false, skip: true};
-          // use service to request connection with google
-          const {uid } = await authWithGoogle({
-            password,
-            skip,
-            withEncryption
-          });
-          resolve({uid, password});
-        } catch (error: any) {
-          await dialogElement.toggleSpinnerAsCross(error?.message);
-          reject(
-            new Error(
-              `Error while connecting with ${detail}: ${error?.message}`
-            )
-          );
-          return;
-        }
-      }
-      // if (detail === 'connect-email') {
-      //   try {
-      //     const sub = this.onConnectStateChanged(async (user) => {
-      //       if (user) {
-      //         sub();
-      //         await dialogElement.toggleSpinnerAsCheck();
-      //         dialogElement.hideModal();
-      //         resolve(this.userInfo);
-      //       }
-      //     });
-      //     await this._authWithEmailLink();
-      //   } catch (error: any) {
-      //     dialogElement.hideModal();
-      //     reject(
-      //       new Error(
-      //         `Error while connecting with ${detail}: ${error?.message}`
-      //       )
-      //     );
-      //   }
-      //   return;
-      // }
-      if (detail === "connect-wallet") {
-        try {
-          const walletType = await dialogElement.promptWalletType();
-          console.log(`[INFO] Wallet type: `, walletType);
-          switch (walletType) {
-            case "browser-extension":
-              await authWithExternalWallet();
-              await dialogElement.toggleSpinnerAsCheck();
-              break;
-            case "import-seed":
-              // import seed
-              throw new Error("Method not implemented yet!");
-              break;
-            case "import-privatekey":
-              // import private key and request password
-              const {privateKey, secret} = await promptImportPrivatekeyElement(
-                dialogElement?.shadowRoot?.querySelector("#spinner") as HTMLElement
-              );
-              console.log(`[INFO] Import private key: `, {privateKey, secret});
-              if (!privateKey) {
-                throw new Error("Private key is required to connect");
-              }
-              const { uid } = await authByImportPrivateKey({
-                password: secret,
-                privateKey,
-              });
-              resolve({uid, password: secret});
-              break;
-            default:
-              throw new Error("Invalid wallet type");
-          }
-        } catch (error: any) {
-          await dialogElement.toggleSpinnerAsCross(error?.message);
-          reject(
-            new Error(
-              `Error while connecting with ${detail}: ${error?.message}`
-            )
-          );
-        }            
-      }
-    });
-  });
-}
+const addAndWaitUIEventsResult = (
+	dialogElement: HexaSigninDialogElement
+): Promise<
+	| {
+			uid: string;
+			isAnonymous?: boolean;
+			password?: string;
+	  }
+	| undefined
+> => {
+	return new Promise(
+		(
+			resolve: (
+				value:
+					| { uid: string; password?: string; isAnonymous?: boolean }
+					| undefined
+			) => void,
+			reject: (err: Error) => void
+		) => {
+			// listen to connect event
+			dialogElement.addEventListener('connect', async e => {
+				const detail = (e as CustomEvent<string>).detail;
+				console.log(`[INFO] connect event: `, detail);
+				// exclude cancel event {
+				if (detail === 'cancel') {
+					dialogElement.hideModal();
+					await new Promise(resolve => setTimeout(resolve, 225));
+					dialogElement.remove();
+					resolve(undefined);
+					return;
+				}
+				// handle type of connection request
+				if (detail === 'connect-google') {
+					try {
+						const password = await dialogElement.promptPassword();
+						// prompt to download private key if not already stored
+						const privateKey = await storageProvider.getItem(
+							KEYS.STORAGE_PRIVATEKEY_KEY
+						);
+						const { withEncryption, skip } = !privateKey
+							? await dialogElement.promptBackup()
+							: { withEncryption: false, skip: true };
+						// use service to request connection with google
+						const { uid } = await authWithGoogle({
+							password,
+							skip,
+							withEncryption
+						});
+						resolve({ uid, password });
+					} catch (error: unknown) {
+						const message =
+							(error as Error)?.message ||
+							'An error occured. Please try again.';
+						await dialogElement.toggleSpinnerAsCross(message);
+						reject(
+							new Error(`Error while connecting with ${detail}: ${message}`)
+						);
+						return;
+					}
+				}
+				// if (detail === 'connect-email') {
+				//   try {
+				//     const sub = this.onConnectStateChanged(async (user) => {
+				//       if (user) {
+				//         sub();
+				//         await dialogElement.toggleSpinnerAsCheck();
+				//         dialogElement.hideModal();
+				//         resolve(this.userInfo);
+				//       }
+				//     });
+				//     await this._authWithEmailLink();
+				//   } catch (error: any) {
+				//     dialogElement.hideModal();
+				//     reject(
+				//       new Error(
+				//         `Error while connecting with ${detail}: ${error?.message}`
+				//       )
+				//     );
+				//   }
+				//   return;
+				// }
+				if (detail === 'connect-wallet') {
+					try {
+						const walletType = await dialogElement.promptWalletType();
+						console.log(`[INFO] Wallet type: `, walletType);
+						switch (walletType) {
+							case 'browser-extension': {
+								const { uid } = await authWithExternalWallet();
+								await dialogElement.toggleSpinnerAsCheck();
+								resolve({ uid, isAnonymous: true });
+								break;
+							}
+							case 'import-seed':
+								// import seed
+								throw new Error('Method not implemented yet!');
+								break;
+							case 'import-privatekey': {
+								// import private key and request password
+								const { privateKey, secret } =
+									await promptImportPrivatekeyElement(
+										dialogElement?.shadowRoot?.querySelector(
+											'#spinner'
+										) as HTMLElement
+									);
+								console.log(`[INFO] Import private key: `, {
+									privateKey,
+									secret
+								});
+								if (!privateKey) {
+									throw new Error('Private key is required to connect');
+								}
+								const { uid } = await authByImportPrivateKey({
+									password: secret,
+									privateKey
+								});
+								resolve({ uid, password: secret });
+								break;
+							}
+							default:
+								throw new Error('Invalid wallet type');
+						}
+					} catch (error: unknown) {
+						const message =
+							(error as Error)?.message ||
+							'An error occured. Please try again.';
+						await dialogElement.toggleSpinnerAsCross(message);
+						reject(
+							new Error(`Error while connecting with ${detail}: ${message}`)
+						);
+					}
+				}
+			});
+		}
+	);
+};
 
-export { HexaSigninDialogElement, setupSigninDialogElement, addAndWaitUIEventsResult };
-
+export {
+	HexaSigninDialogElement,
+	setupSigninDialogElement,
+	addAndWaitUIEventsResult
+};
