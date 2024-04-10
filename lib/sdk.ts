@@ -6,25 +6,15 @@ import {
 	addAndWaitUIEventsResult,
 	setupSigninDialogElement
 } from './ui/dialog-element/dialogElement';
-import {
-	CHAIN_DEFAULT,
-	DEFAULT_SIGNIN_METHODS,
-	KEYS,
-	SigninMethod
-} from './constant';
-import { IStorageProvider } from './interfaces/storage-provider.interface';
+import { CHAIN_DEFAULT, DEFAULT_SIGNIN_METHODS, KEYS } from './constant';
 // import { parseApiKey } from './utils';
 import { initWallet } from './services/wallet.service.ts';
 import { Auth } from 'firebase/auth';
+import { SDKOptions } from './interfaces/sdk.interface.ts';
 
 export class FirebaseWeb3Connect {
 	private readonly _apiKey!: string;
-	private _ops?: {
-		chainId?: number;
-		rpcUrl?: string;
-		enabledSigninMethods?: SigninMethod[];
-		storageService?: IStorageProvider;
-	};
+	private _ops?: SDKOptions;
 	private _secret!: string | undefined;
 	private _provider!: providers.JsonRpcProvider | providers.BaseProvider;
 	private _publicKey!: string | null;
@@ -45,16 +35,7 @@ export class FirebaseWeb3Connect {
 			: null;
 	}
 
-	constructor(
-		auth: Auth,
-		apiKey: string,
-		ops?: {
-			chainId?: number;
-			rpcUrl?: string;
-			enabledSigninMethods?: SigninMethod[];
-			storageService?: IStorageProvider;
-		}
-	) {
+	constructor(auth: Auth, apiKey: string, ops?: SDKOptions) {
 		this._apiKey = apiKey; // parseApiKey(apiKey.slice(2));
 		this._ops = {
 			enabledSigninMethods: DEFAULT_SIGNIN_METHODS,
@@ -72,7 +53,8 @@ export class FirebaseWeb3Connect {
 		console.log(`[INFO] FirebaseWeb3Connect initialized and ready!`, {
 			config: this._ops,
 			mode: import.meta.env.MODE,
-			apiKey: this._apiKey
+			apiKey: this._apiKey,
+			auth
 		});
 	}
 
@@ -98,7 +80,9 @@ export class FirebaseWeb3Connect {
 		// build UI
 		const dialogElement = setupSigninDialogElement(document.body, {
 			isLightMode,
-			enabledSigninMethods: this._ops?.enabledSigninMethods
+			enabledSigninMethods: this._ops?.enabledSigninMethods,
+			integrator: this._ops?.dialogUI?.integrator,
+			logoUrl: this._ops?.dialogUI?.logoUrl
 		});
 		// open modal
 		dialogElement.showModal();
