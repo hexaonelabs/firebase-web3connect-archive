@@ -30,9 +30,9 @@ To get started with Firebase Web3Connect, follow these steps:
 Install Firebase Web3Connect in your project using npm or yarn.
 
 ```bash
-npm install firebase-web3-connect
+npm install @hexaonelabs/firebase-web3connect
 # or
-yarn add firebase-web3-connect
+yarn add @hexaonelabs/firebase-web3connect
 ```
 
 ### **2. Configuration:**
@@ -40,12 +40,22 @@ yarn add firebase-web3-connect
 Configure Firebase Web3Connect with your Firebase project settings.
 
 ```javascript
-import { HexaConnect, SigninMethod } from '../lib';
+import { HexaConnect, SigninMethod } from '@hexaonelabs/firebase-web3connect';
+// Import the functions you need from the SDKs you need
+import { FirebaseOptions, initializeApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+
+const firebaseConfig: FirebaseOptions = {
+  // Your Firebase configuration here
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+// Initialize Firebase Auth
+const auth = getAuth(app);
 
 // create local instance of FirebaseWeb3Connect
-const APIKEY = ''; // Your Firebase Web3Conect API Key
-
-export const firebaseWeb3Connect = new FirebaseWeb3Connect(APIKEY);
+const firebaseWeb3Connect = new FirebaseWeb3Connect(auth, APIKEY);
 ```
 
 ### **3. Usage:**
@@ -58,6 +68,10 @@ const connect = async () => {
 	const userInfo = await firebaseWeb3Connect.connectWithUI();
 	// userInfo contains user information
 	return userInfo;
+};
+
+const signOut = async () => {
+	await firebaseWeb3Connect.signOut();
 };
 ```
 
