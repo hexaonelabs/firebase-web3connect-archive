@@ -1,9 +1,11 @@
+import { Auth } from 'firebase/auth';
+
 type Unsubscribe = () => void;
 
 type User = { uid: string; isAnonymous: boolean };
 type UserCredential = { user: User };
 
-export interface IAuthProvider<T> {
+export interface IAuthProvider {
 	signinWithGoogle: () => Promise<{ uid: string }>;
 	sendLinkToEmail: (email: string) => Promise<void>;
 	signInWithLink: () => Promise<UserCredential | undefined>;
@@ -11,5 +13,5 @@ export interface IAuthProvider<T> {
 	signOut: () => Promise<void>;
 	getOnAuthStateChanged: (cb: (user: User | null) => void) => Unsubscribe;
 	getCurrentUserAuth: () => Promise<User | null>;
-	initialize: (config: T) => void;
+	initialize: (auth: Auth, ops?: string) => void;
 }

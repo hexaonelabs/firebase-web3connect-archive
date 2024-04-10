@@ -19,7 +19,7 @@ class HexaSigninDialogElement extends HTMLElement {
 		super();
 		const integrator = this.getAttribute('integrator')
 			? 'Sign in to' + this.getAttribute('integrator')
-			: 'Sign in using HexaConnect';
+			: 'Sign in using FirebaseWeb3Connect';
 		// get enabled signin methods. If not provided, all methods are enabled by default
 		const enabledMethods = this.getAttribute('signin-methods')
 			? this.getAttribute('signin-methods')

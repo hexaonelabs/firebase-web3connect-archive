@@ -40,7 +40,7 @@ yarn add @hexaonelabs/firebase-web3connect
 Configure Firebase Web3Connect with your Firebase project settings.
 
 ```javascript
-import { HexaConnect, SigninMethod } from '@hexaonelabs/firebase-web3connect';
+import { FirebaseWeb3Connect, SigninMethod } from '@hexaonelabs/firebase-web3connect';
 // Import the functions you need from the SDKs you need
 import { FirebaseOptions, initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
