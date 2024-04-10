@@ -5,7 +5,7 @@ import './ui/dialog-element/dialogElement';
 import {
 	addAndWaitUIEventsResult,
 	setupSigninDialogElement
-} from './ui/dialog-element/dialogElement';
+} from './ui/dialog-element';
 import { CHAIN_DEFAULT, DEFAULT_SIGNIN_METHODS, KEYS } from './constant';
 // import { parseApiKey } from './utils';
 import { initWallet } from './services/wallet.service.ts';
@@ -59,9 +59,10 @@ export class FirebaseWeb3Connect {
 	}
 
 	static isConnectWithLink() {
-		// check special paramettre in url `finishSignUp`
-		const isSignInWithLink =
-			window.location.search.includes('finishSignUp=true');
+		// check special paramettre in url
+		const isSignInWithLink = window.location.search.includes(
+			KEYS.URL_QUERYPARAM_FINISH_SIGNUP
+		);
 		if (!isSignInWithLink) {
 			return false;
 		} else {

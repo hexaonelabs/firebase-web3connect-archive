@@ -27,10 +27,11 @@ const signinWithGoogle = async () => {
 };
 
 const sendLinkToEmail = async (email: string) => {
+	const url = `${window.location.origin}/?${KEYS.URL_QUERYPARAM_FINISH_SIGNUP}=true`;
 	const actionCodeSettings = {
 		// URL you want to redirect back to. The domain (www.example.com) for this
 		// URL must be in the authorized domains list in the Firebase Console.
-		url: 'http://localhost:5173/?finishSignUp=true',
+		url,
 		// This must be true.
 		handleCodeInApp: true
 		// dynamicLinkDomain: 'example.page.link'
@@ -77,7 +78,7 @@ const signInWithLink = async () => {
 	// You can check if the user is new or existing:
 	// result.additionalUserInfo.isNewUser
 	// Clear email from storage.
-	window.localStorage.removeItem('emailForSignIn');
+	window.localStorage.removeItem(KEYS.STORAGE_EMAIL_FOR_SIGNIN_KEY);
 	return credential;
 };
 

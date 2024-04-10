@@ -13,9 +13,10 @@ const auth = getAuth(app);
 
 // Initialize local instance of FirebaseWeb3Connect
 export const firebaseWeb3Connect = new FirebaseWeb3Connect(auth, 'APIKEY', {
-	// enabledSigninMethods: [
-	//   SigninMethod.Google,
-	// ],
+	// enabledSigninMethods: [SigninMethod.Google]
+	// dialogUI: {
+	// 	integrator: 'Demo App'
+	// }
 	// storageService: {
 	//   apiKey: import.meta.env.VITE_STORAGE_APIKEY,
 	// }
