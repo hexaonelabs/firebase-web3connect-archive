@@ -130,7 +130,6 @@ export class HexaConnect {
 			throw error;
 		}
 		// close modal with animation and resolve the promise with user info
-		await dialogElement.toggleSpinnerAsCheck();
 		dialogElement.hideModal();
 		// wait 225ms to let the dialog close wth animation
 		await new Promise(resolve => setTimeout(resolve, 225));

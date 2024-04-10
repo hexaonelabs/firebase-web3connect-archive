@@ -458,15 +458,13 @@ const addAndWaitUIEventsResult = (
 							skip,
 							withEncryption
 						});
+						await dialogElement.toggleSpinnerAsCheck();
 						resolve({ uid, password });
 					} catch (error: unknown) {
 						const message =
 							(error as Error)?.message ||
 							'An error occured. Please try again.';
-						await dialogElement.toggleSpinnerAsCross(message);
-						reject(
-							new Error(`Error while connecting with ${detail}: ${message}`)
-						);
+						reject(new Error(`${message}`));
 						return;
 					}
 				}
@@ -535,10 +533,7 @@ const addAndWaitUIEventsResult = (
 						const message =
 							(error as Error)?.message ||
 							'An error occured. Please try again.';
-						await dialogElement.toggleSpinnerAsCross(message);
-						reject(
-							new Error(`Error while connecting with ${detail}: ${message}`)
-						);
+						reject(new Error(`Error while connecting: ${message}`));
 					}
 				}
 			});
