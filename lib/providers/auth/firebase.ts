@@ -1,9 +1,8 @@
 // Import the functions you need from the SDKs you need
-import { FirebaseOptions, initializeApp } from 'firebase/app';
+// import { FirebaseOptions, initializeApp } from 'firebase/app';
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 import {
-	getAuth,
 	GoogleAuthProvider,
 	signInWithPopup,
 	sendSignInLinkToEmail,
@@ -50,7 +49,10 @@ const signInWithLink = async () => {
 	if (!isSignInWithEmailLink(auth, window.location.href)) {
 		return undefined;
 	}
-	console.log('[INFO] HexaConnect - signInWithLink: ', window.location.href);
+	console.log(
+		'[INFO] FirebaseWeb3Connect - signInWithLink: ',
+		window.location.href
+	);
 	// Additional state parameters can also be passed via URL.
 	// This can be used to continue the user's intended action before triggering
 	// the sign-in operation.
@@ -87,11 +89,9 @@ const signOut = async () => {
 	await signOutFormFirebase(auth);
 };
 
-const initialize = (firebaseConfig: FirebaseOptions) => {
-	// Initialize Firebase
-	const app = initializeApp(firebaseConfig);
-	// Initialize Firebase Auth
-	auth = getAuth(app);
+const initialize = (_auth: Auth) => {
+	auth = _auth;
+	// Object.freeze(auth);
 };
 
 const getOnAuthStateChanged = (cb: (user: User | null) => void) =>
@@ -101,7 +101,7 @@ const getCurrentUserAuth = async () => {
 	return auth.currentUser;
 };
 
-const FirebaseAuthProvider: IAuthProvider<FirebaseOptions> = {
+const FirebaseAuthProvider: IAuthProvider = {
 	signinWithGoogle,
 	sendLinkToEmail,
 	signInWithLink,

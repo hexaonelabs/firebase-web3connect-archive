@@ -6,25 +6,15 @@ import {
 	addAndWaitUIEventsResult,
 	setupSigninDialogElement
 } from './ui/dialog-element/dialogElement';
-import { FirebaseOptions } from 'firebase/app';
-import {
-	CHAIN_DEFAULT,
-	DEFAULT_SIGNIN_METHODS,
-	KEYS,
-	SigninMethod
-} from './constant';
-import { IStorageProvider } from './interfaces/storage-provider.interface';
-import { parseApiKey } from './utils';
+import { CHAIN_DEFAULT, DEFAULT_SIGNIN_METHODS, KEYS } from './constant';
+// import { parseApiKey } from './utils';
 import { initWallet } from './services/wallet.service.ts';
+import { Auth } from 'firebase/auth';
+import { SDKOptions } from './interfaces/sdk.interface.ts';
 
-export class HexaConnect {
-	private readonly _apiKey!: FirebaseOptions;
-	private _ops?: {
-		chainId?: number;
-		rpcUrl?: string;
-		enabledSigninMethods?: SigninMethod[];
-		storageService?: IStorageProvider;
-	};
+export class FirebaseWeb3Connect {
+	private readonly _apiKey!: string;
+	private _ops?: SDKOptions;
 	private _secret!: string | undefined;
 	private _provider!: providers.JsonRpcProvider | providers.BaseProvider;
 	private _publicKey!: string | null;
@@ -45,30 +35,26 @@ export class HexaConnect {
 			: null;
 	}
 
-	constructor(
-		apiKey: string,
-		ops?: {
-			chainId?: number;
-			rpcUrl?: string;
-			enabledSigninMethods?: SigninMethod[];
-			storageService?: IStorageProvider;
-		}
-	) {
-		this._apiKey = parseApiKey(apiKey.slice(2));
+	constructor(auth: Auth, apiKey: string, ops?: SDKOptions) {
+		this._apiKey = apiKey; // parseApiKey(apiKey.slice(2));
 		this._ops = {
 			enabledSigninMethods: DEFAULT_SIGNIN_METHODS,
 			...ops
 		};
-		authProvider.initialize(this._apiKey);
+		authProvider.initialize(auth);
 		// set storage.uid
 		(this._ops?.storageService || storageProvider).initialize();
 		// check if window is available and HTMLDialogElement is supported
 		if (!window || !window.HTMLDialogElement) {
-			throw new Error('[ERROR] HexaConnect: HTMLDialogElement not supported');
+			throw new Error(
+				'[ERROR] FirebaseWeb3Connect: HTMLDialogElement not supported'
+			);
 		}
-		console.log(`[INFO] HexaConnect initialized and ready!`, {
+		console.log(`[INFO] FirebaseWeb3Connect initialized and ready!`, {
 			config: this._ops,
-			mode: import.meta.env.MODE
+			mode: import.meta.env.MODE,
+			apiKey: this._apiKey,
+			auth
 		});
 	}
 
@@ -94,7 +80,9 @@ export class HexaConnect {
 		// build UI
 		const dialogElement = setupSigninDialogElement(document.body, {
 			isLightMode,
-			enabledSigninMethods: this._ops?.enabledSigninMethods
+			enabledSigninMethods: this._ops?.enabledSigninMethods,
+			integrator: this._ops?.dialogUI?.integrator,
+			logoUrl: this._ops?.dialogUI?.logoUrl
 		});
 		// open modal
 		dialogElement.showModal();
@@ -130,7 +118,6 @@ export class HexaConnect {
 			throw error;
 		}
 		// close modal with animation and resolve the promise with user info
-		await dialogElement.toggleSpinnerAsCheck();
 		dialogElement.hideModal();
 		// wait 225ms to let the dialog close wth animation
 		await new Promise(resolve => setTimeout(resolve, 225));

@@ -12,23 +12,28 @@ import {
 	authWithExternalWallet,
 	authWithGoogle
 } from '../../services/auth.servcie';
+import { DialogUIOptions } from '../../interfaces/sdk.interface';
 
 // export web component with shadowdom
 class HexaSigninDialogElement extends HTMLElement {
 	constructor() {
 		super();
-		const integrator = this.getAttribute('integrator')
-			? 'Sign in to' + this.getAttribute('integrator')
-			: 'Sign in using HexaConnect';
+		const integrator =
+			(this.getAttribute('integrator')?.length || 0) > 0 &&
+			this.getAttribute('integrator') !== 'undefined'
+				? 'Sign in to ' + this.getAttribute('integrator')
+				: 'Sign in using FirebaseWeb3Connect';
 		// get enabled signin methods. If not provided, all methods are enabled by default
-		const enabledMethods = this.getAttribute('signin-methods')
-			? this.getAttribute('signin-methods')
-					?.split(',')
-					?.filter(
-						(method): method is (typeof DEFAULT_SIGNIN_METHODS)[number] =>
-							method !== undefined
-					) || DEFAULT_SIGNIN_METHODS
-			: DEFAULT_SIGNIN_METHODS;
+		const enabledMethods =
+			(this.getAttribute('signin-methods')?.length || 0) > 0 &&
+			this.getAttribute('signin-methods') !== 'undefined'
+				? this.getAttribute('signin-methods')
+						?.split(',')
+						?.filter(
+							(method): method is (typeof DEFAULT_SIGNIN_METHODS)[number] =>
+								method !== undefined
+						) || DEFAULT_SIGNIN_METHODS
+				: DEFAULT_SIGNIN_METHODS;
 		// build shadow dom
 		const shadow = this.attachShadow({ mode: 'open' });
 		if (!shadow) {
@@ -62,6 +67,18 @@ class HexaSigninDialogElement extends HTMLElement {
 				enabledMethods.length === 1)
 		) {
 			template.content.querySelector('.or')?.remove();
+		}
+		// add `logo` if provided
+		const logoUrl =
+			(this.getAttribute('logo')?.length || 0) > 0 &&
+			this.getAttribute('logo') !== 'undefined'
+				? this.getAttribute('logo')
+				: undefined;
+		if (logoUrl) {
+			console.log(`[INFO] Logo URL: `, logoUrl);
+			(template.content.querySelector('#logo') as HTMLElement).innerHTML = `
+				<img src="${logoUrl}" alt="logo" />	
+			`;
 		}
 		// finaly add template to shadow dom
 		shadow.appendChild(template.content.cloneNode(true));
@@ -379,25 +396,28 @@ class HexaSigninDialogElement extends HTMLElement {
 
 const setupSigninDialogElement = (
 	ref: HTMLElement = document.body,
-	ops: {
-		enabledSigninMethods: SigninMethod[] | undefined;
-		isLightMode: boolean;
-	}
+	ops: DialogUIOptions
 ) => {
 	// check if element already defined
 	if (!customElements.get('hexa-signin-dialog')) {
 		customElements.define('hexa-signin-dialog', HexaSigninDialogElement);
 	}
 	// extract options
-	const { isLightMode = true, enabledSigninMethods = DEFAULT_SIGNIN_METHODS } =
-		ops || {};
+	const {
+		isLightMode = true,
+		enabledSigninMethods = DEFAULT_SIGNIN_METHODS,
+		logoUrl,
+		integrator
+	} = ops || {};
 	// insert webcomponent element to DOM
 	ref.insertAdjacentHTML(
 		'beforeend',
 		`<hexa-signin-dialog 
         id="hexa-wallet-connectWithUI-dialog" 
         signin-methods="${enabledSigninMethods?.join(',')}"
-        theme="${isLightMode ? 'light' : 'dark'}" />`
+        theme="${isLightMode ? 'light' : 'dark'}"
+				integrator="${integrator}"
+				logo="${logoUrl}" />`
 	);
 	// check if element is inserted properly
 	const dialogElement = document.getElementById(
@@ -458,15 +478,13 @@ const addAndWaitUIEventsResult = (
 							skip,
 							withEncryption
 						});
+						await dialogElement.toggleSpinnerAsCheck();
 						resolve({ uid, password });
 					} catch (error: unknown) {
 						const message =
 							(error as Error)?.message ||
 							'An error occured. Please try again.';
-						await dialogElement.toggleSpinnerAsCross(message);
-						reject(
-							new Error(`Error while connecting with ${detail}: ${message}`)
-						);
+						reject(new Error(`${message}`));
 						return;
 					}
 				}
@@ -535,10 +553,7 @@ const addAndWaitUIEventsResult = (
 						const message =
 							(error as Error)?.message ||
 							'An error occured. Please try again.';
-						await dialogElement.toggleSpinnerAsCross(message);
-						reject(
-							new Error(`Error while connecting with ${detail}: ${message}`)
-						);
+						reject(new Error(`Error while connecting: ${message}`));
 					}
 				}
 			});
