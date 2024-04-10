@@ -1,9 +1,9 @@
 import { passwordValidationOrSignature } from '../providers/crypto/password';
-import storageProvider from '../providers/storage/local';
 import authProvider from '../providers/auth/firebase';
 import Crypto from '../providers/crypto/crypto';
 import evmWallet from '../networks/evm';
 import { CHAIN_DEFAULT, KEYS } from '../constant';
+import { storageService } from './storage.service';
 
 export const authWithGoogle = async (ops: {
 	password: string;
@@ -17,7 +17,7 @@ export const authWithGoogle = async (ops: {
 	await passwordValidationOrSignature(password).execute();
 
 	// if user is requesting to create new privatekey
-	const privateKey = await storageProvider.getItem(KEYS.STORAGE_PRIVATEKEY_KEY);
+	const privateKey = await storageService.getItem(KEYS.STORAGE_PRIVATEKEY_KEY);
 	if (!privateKey && !skip) {
 		// store to local storage tag to trigger download of the private key
 		// when the user is connected (using listener onConnectStateChanged)
@@ -29,10 +29,10 @@ export const authWithGoogle = async (ops: {
 
 	// encrypt secret with user secret and store it
 	const encryptedSecret = await Crypto.encrypt(
-		storageProvider.getUniqueID(),
+		storageService.getUniqueID(),
 		password
 	);
-	await storageProvider.setItem(KEYS.STORAGE_SECRET_KEY, encryptedSecret);
+	await storageService.setItem(KEYS.STORAGE_SECRET_KEY, encryptedSecret);
 
 	// Now we can connect with Google
 	return await authProvider.signinWithGoogle();
@@ -59,7 +59,7 @@ export const authByImportPrivateKey = async (ops: {
 
 	// encrypt private key before storing it
 	const encryptedPrivateKey = await Crypto.encrypt(password, privateKey);
-	await storageProvider.setItem(
+	await storageService.setItem(
 		KEYS.STORAGE_PRIVATEKEY_KEY,
 		encryptedPrivateKey
 	);

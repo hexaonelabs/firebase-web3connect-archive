@@ -1,7 +1,6 @@
 import { FirebaseWeb3ConnectDialogElement } from '../../interfaces/dialog-element.interface';
 import { DialogUIOptions } from '../../interfaces/sdk.interface';
 import { HexaSigninDialogElement } from './dialogElement';
-import storageProvider from '../../providers/storage/local';
 import { KEYS } from '../../constant';
 import {
 	authByImportPrivateKey,
@@ -9,6 +8,7 @@ import {
 	authWithGoogle
 } from '../../services/auth.servcie';
 import { promptImportPrivatekeyElement } from '../prompt-import-privatekey-element/prompt-import-privatekey-element';
+import { storageService } from '../../services/storage.service';
 
 const setupSigninDialogElement = (
 	ref: HTMLElement = document.body,
@@ -67,7 +67,7 @@ const addAndWaitUIEventsResult = (
 					try {
 						const password = await dialogElement.promptPassword();
 						// prompt to download private key if not already stored
-						const privateKey = await storageProvider.getItem(
+						const privateKey = await storageService.getItem(
 							KEYS.STORAGE_PRIVATEKEY_KEY
 						);
 						const { withEncryption, skip } = !privateKey

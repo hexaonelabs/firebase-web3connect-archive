@@ -1,8 +1,8 @@
 import evmWallet from '../networks/evm';
 import Crypto from '../providers/crypto/crypto';
-import storageProvider from '../providers/storage/local';
 import authProvider from '../providers/auth/firebase';
 import { KEYS } from '../constant';
+import { storageService } from './storage.service';
 
 export const initWallet = async (
 	user: {
@@ -16,13 +16,13 @@ export const initWallet = async (
 
 	if (!secret && user && !user.isAnonymous) {
 		// check if secret is stored in local storage
-		const encryptedSecret = await storageProvider.getItem(
+		const encryptedSecret = await storageService.getItem(
 			KEYS.STORAGE_SECRET_KEY
 		);
 		console.log('>> no secret > get encryptedSecret:', encryptedSecret);
 		if (encryptedSecret) {
 			secret = await Crypto.decrypt(
-				storageProvider.getUniqueID(),
+				storageService.getUniqueID(),
 				encryptedSecret
 			);
 		}
@@ -41,7 +41,7 @@ export const initWallet = async (
 	}
 	// connect using auth service
 	// check if encrypted private key is available from storage
-	const storedEncryptedPrivateKey = await storageProvider.getItem(
+	const storedEncryptedPrivateKey = await storageService.getItem(
 		KEYS.STORAGE_PRIVATEKEY_KEY
 	);
 	// generate wallet from encrypted private key or generate new from random mnemonic
@@ -63,7 +63,7 @@ export const initWallet = async (
 						secret,
 						wallet.privateKey
 					);
-					await storageProvider.setItem(
+					await storageService.setItem(
 						KEYS.STORAGE_PRIVATEKEY_KEY,
 						encryptedPrivateKey
 					);
@@ -72,7 +72,7 @@ export const initWallet = async (
 	// // check local storage to existing tag to trigger backup download of the created private key
 	const requestBackup = localStorage.getItem(KEYS.STORAGE_BACKUP_KEY);
 	if (requestBackup) {
-		await storageProvider.executeBackup(Boolean(requestBackup), secret);
+		await storageService.executeBackup(Boolean(requestBackup), secret);
 	}
 	// return wallet values with the generated wallet
 	return { did, address, provider, publicKey, privateKey };

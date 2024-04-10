@@ -11,6 +11,7 @@ import { CHAIN_DEFAULT, DEFAULT_SIGNIN_METHODS, KEYS } from './constant';
 import { initWallet } from './services/wallet.service.ts';
 import { Auth } from 'firebase/auth';
 import { SDKOptions } from './interfaces/sdk.interface.ts';
+import { storageService } from './services/storage.service.ts';
 
 export class FirebaseWeb3Connect {
 	private readonly _apiKey!: string;
@@ -41,9 +42,10 @@ export class FirebaseWeb3Connect {
 			enabledSigninMethods: DEFAULT_SIGNIN_METHODS,
 			...ops
 		};
+		// initialize service dependencies
 		authProvider.initialize(auth);
 		// set storage.uid
-		(this._ops?.storageService || storageProvider).initialize();
+		storageService.initialize(this._ops?.storageService || storageProvider);
 		// check if window is available and HTMLDialogElement is supported
 		if (!window || !window.HTMLDialogElement) {
 			throw new Error(
@@ -128,7 +130,7 @@ export class FirebaseWeb3Connect {
 	}
 
 	public async signout() {
-		await storageProvider.removeItem(KEYS.STORAGE_SECRET_KEY);
+		await storageService.removeItem(KEYS.STORAGE_SECRET_KEY);
 		await authProvider.signOut();
 	}
 
@@ -183,7 +185,7 @@ export class FirebaseWeb3Connect {
 					await this.initWallet(user);
 				} catch (error: unknown) {
 					await authProvider.signOut();
-					await storageProvider.clear();
+					await storageService.clear();
 					const message =
 						(error as Error)?.message || 'An error occured while connecting';
 					console.error('[ERROR] onConnectStateChanged:', message);

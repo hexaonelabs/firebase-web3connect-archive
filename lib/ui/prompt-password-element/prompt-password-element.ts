@@ -1,31 +1,38 @@
-import storageProvider from "../../providers/storage/local";
+import { storageService } from '../../services/storage.service';
 
 export const promptPasswordElement = async (
-  ref: HTMLElement, 
-  ops?: {
-    requestPwd?: boolean;
-  }
+	ref: HTMLElement,
+	ops?: {
+		requestPwd?: boolean;
+	}
 ): Promise<string> => {
+	const minPasswordLength = 4;
+	const maxPasswordLength = 32;
 
-  const minPasswordLength = 4;
-  const maxPasswordLength = 32;
+	const isRequestPwd = ops?.requestPwd || false;
+	const isCreating =
+		!(await storageService.isExistingPrivateKeyStored()) &&
+		isRequestPwd !== true;
+	console.log('isCreating', isCreating, isRequestPwd);
 
-  const isRequestPwd = ops?.requestPwd || false;
-  const isCreating = (!await storageProvider.isExistingPrivateKeyStored()) && (isRequestPwd !== true);
-  console.log('isCreating', isCreating, isRequestPwd);
+	const isValideInputs = (
+		inputPassword: HTMLInputElement,
+		inputConfirme?: HTMLInputElement
+	) => {
+		if (!inputConfirme) {
+			return inputPassword.value.length > 0;
+		}
+		return (
+			inputPassword.value.length > 0 &&
+			inputConfirme.value.length > 0 &&
+			inputPassword.value === inputConfirme.value
+		);
+	};
 
-  const isValideInputs = (inputPassword: HTMLInputElement, inputConfirme?: HTMLInputElement) => {
-    if (!inputConfirme) {
-      return inputPassword.value.length > 0;
-    }
-    return (inputPassword.value.length > 0 && inputConfirme.value.length > 0 && inputPassword.value === inputConfirme.value);
-  }
-
-  return new Promise((resolve) => {
-
-    const container = document.createElement('div');
-    container.classList.add('prompt-container');
-    const html = `
+	return new Promise(resolve => {
+		const container = document.createElement('div');
+		container.classList.add('prompt-container');
+		const html = `
     <style>
       .prompt-container {
         background: var(--dialog-background-color);
@@ -63,16 +70,14 @@ export const promptPasswordElement = async (
     </style>
       <div class="prompt__message">
         <p><b>${
-          isCreating 
-            ? 'Protect your wallet with a password'
-            : 'Welcome back!'
-        
-        }</b></p>
+					isCreating ? 'Protect your wallet with a password' : 'Welcome back!'
+				}</b></p>
         <p>
-          ${isCreating
-            ? `The password you enter encrypts your private key and gives access to your funds. Please store your password in a safe place. We don’t keep your information and can’t restore it.`
-            : `Unlock your wallet with your password.`
-          }
+          ${
+						isCreating
+							? `The password you enter encrypts your private key and gives access to your funds. Please store your password in a safe place. We don’t keep your information and can’t restore it.`
+							: `Unlock your wallet with your password.`
+					}
         </p>
       </div>
       <input 
@@ -81,10 +86,11 @@ export const promptPasswordElement = async (
         type="password" 
         minLength="${minPasswordLength}"
         maxLength="${maxPasswordLength}"
-        autocomplet="${ isCreating ? 'new-password' : 'current-password'}"
+        autocomplet="${isCreating ? 'new-password' : 'current-password'}"
         placeholder="password" />
-      ${isCreating 
-          ? `
+      ${
+				isCreating
+					? `
             <input 
               class="prompt__input confirme" 
               name="confirme"
@@ -94,39 +100,44 @@ export const promptPasswordElement = async (
               autocomplet="new-password"
               placeholder="confirme password" />
               `
-              : ``}
+					: ``
+			}
       <button disabled class="prompt__button">OK</button>
     `;
-    container.innerHTML = html;
-    ref.after(container);
-    ref.style.display = 'none';
+		container.innerHTML = html;
+		ref.after(container);
+		ref.style.display = 'none';
 
-    const inputPassword = container.querySelector('.prompt__input.password') as HTMLInputElement;
-    const inputConfirme = container.querySelector('.prompt__input.confirme') as HTMLInputElement;
-    const button = container.querySelector('.prompt__button') as HTMLButtonElement;
-    button.addEventListener('click', () => {
-      resolve(inputPassword.value);
-      container.remove();
-      // prevent flash ui. ref will be hiden to display backup step
-      // if is creating wallet. This is why we dont switch to display block
-      if (!isCreating) {
-        ref.style.display = 'block';
-      }
-    });
-    
-    // manage validation of input to enable button
-    inputPassword.addEventListener('input', () => {
-      const isValid = isValideInputs(inputPassword, inputConfirme);
-      button.disabled = !isValid;
-    });
+		const inputPassword = container.querySelector(
+			'.prompt__input.password'
+		) as HTMLInputElement;
+		const inputConfirme = container.querySelector(
+			'.prompt__input.confirme'
+		) as HTMLInputElement;
+		const button = container.querySelector(
+			'.prompt__button'
+		) as HTMLButtonElement;
+		button.addEventListener('click', () => {
+			resolve(inputPassword.value);
+			container.remove();
+			// prevent flash ui. ref will be hiden to display backup step
+			// if is creating wallet. This is why we dont switch to display block
+			if (!isCreating) {
+				ref.style.display = 'block';
+			}
+		});
 
-    if (isCreating) {
-      inputConfirme.addEventListener('input', () => {
-        const isValid = isValideInputs(inputPassword, inputConfirme);
-        button.disabled = !isValid;
-      });
-    }
+		// manage validation of input to enable button
+		inputPassword.addEventListener('input', () => {
+			const isValid = isValideInputs(inputPassword, inputConfirme);
+			button.disabled = !isValid;
+		});
 
-  });
+		if (isCreating) {
+			inputConfirme.addEventListener('input', () => {
+				const isValid = isValideInputs(inputPassword, inputConfirme);
+				button.disabled = !isValid;
+			});
+		}
+	});
 };
-
