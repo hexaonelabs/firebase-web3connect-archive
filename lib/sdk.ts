@@ -107,8 +107,8 @@ export class HexaConnect {
 			} = (await addAndWaitUIEventsResult(dialogElement)) || {};
 
 			console.log(`[INFO] Closing dialog`, { password, isAnonymous, uid });
-			// handle close event
-			if (!uid) {
+			// handle close event && anonymous user
+			if (!uid || isAnonymous) {
 				dialogElement.hideModal();
 				// wait 225ms to let the dialog close wth animation
 				await new Promise(resolve => setTimeout(resolve, 225));
@@ -123,8 +123,10 @@ export class HexaConnect {
 			});
 			// resolve result
 			// resolve(this.userInfo);
-		} catch (error: any) {
-			await dialogElement.toggleSpinnerAsCross(error?.message);
+		} catch (error: unknown) {
+			const message =
+				(error as Error)?.message || 'An error occured while connecting';
+			await dialogElement.toggleSpinnerAsCross(message);
 			throw error;
 		}
 		// close modal with animation and resolve the promise with user info
@@ -191,10 +193,12 @@ export class HexaConnect {
 			if (!this.userInfo && user) {
 				try {
 					await this.initWallet(user);
-				} catch (error: any) {
+				} catch (error: unknown) {
 					await authProvider.signOut();
 					await storageProvider.clear();
-					console.error('[ERROR] onConnectStateChanged:', error?.message);
+					const message =
+						(error as Error)?.message || 'An error occured while connecting';
+					console.error('[ERROR] onConnectStateChanged:', message);
 					//throw error;
 				}
 			} else {

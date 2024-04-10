@@ -45,8 +45,10 @@ export const authWithExternalWallet = async (
 
 	const { did, address, provider } =
 		await evmWallet.connectWithExternalWallet();
-	await authProvider.signInAsAnonymous();
-	return { did, address, provider };
+	const {
+		user: { uid }
+	} = await authProvider.signInAsAnonymous();
+	return { did, address, provider, uid };
 };
 
 export const authByImportPrivateKey = async (ops: {

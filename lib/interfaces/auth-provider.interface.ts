@@ -1,19 +1,15 @@
 type Unsubscribe = () => void;
 
+type User = { uid: string; isAnonymous: boolean };
+type UserCredential = { user: User };
+
 export interface IAuthProvider<T> {
 	signinWithGoogle: () => Promise<{ uid: string }>;
 	sendLinkToEmail: (email: string) => Promise<void>;
-	signInWithLink: () => Promise<
-		{ user: { uid: string; isAnonymous: boolean } } | undefined
-	>;
-	signInAsAnonymous: () => Promise<void>;
+	signInWithLink: () => Promise<UserCredential | undefined>;
+	signInAsAnonymous: () => Promise<UserCredential>;
 	signOut: () => Promise<void>;
-	getOnAuthStateChanged: (
-		cb: (user: { uid: string; isAnonymous: boolean } | null) => void
-	) => Unsubscribe;
-	getCurrentUserAuth: () => Promise<{
-		uid: string;
-		isAnonymous: boolean;
-	} | null>;
+	getOnAuthStateChanged: (cb: (user: User | null) => void) => Unsubscribe;
+	getCurrentUserAuth: () => Promise<User | null>;
 	initialize: (config: T) => void;
 }
