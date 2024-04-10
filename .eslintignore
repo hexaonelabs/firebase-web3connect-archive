@@ -1,5 +1,7 @@
 node_modules/
 dist/
+cli/
+src/
 .prettierrc.js
 .eslintrc.js
 env.d.ts
