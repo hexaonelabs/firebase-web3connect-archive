@@ -12,7 +12,8 @@ import {
 	signOut as signOutFormFirebase,
 	Auth,
 	onAuthStateChanged as onAuthStateChangedFirebase,
-	User
+	User,
+	browserPopupRedirectResolver
 } from 'firebase/auth';
 import { IAuthProvider } from '../../interfaces/auth-provider.interface';
 import { KEYS } from '../../constant';
@@ -22,7 +23,11 @@ let auth!: Auth;
 const signinWithGoogle = async () => {
 	// Initialize Firebase Google Auth
 	const provider = new GoogleAuthProvider();
-	const credential = await signInWithPopup(auth, provider);
+	const credential = await signInWithPopup(
+		auth,
+		provider,
+		browserPopupRedirectResolver
+	);
 	return credential.user;
 };
 
