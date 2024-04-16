@@ -18,9 +18,10 @@ export class FirebaseWeb3Connect {
 	private _ops?: SDKOptions;
 	private _secret!: string | undefined;
 	private _provider!: providers.JsonRpcProvider | providers.BaseProvider;
-	private _publicKey!: string | null;
-	private _did!: string | null;
-	private _address!: string | null;
+	private _publicKey!: string | undefined;
+	private _did!: string | undefined;
+	private _address!: string | undefined;
+	private _uid!: string | undefined;
 
 	get provider() {
 		return this._provider;
@@ -31,7 +32,8 @@ export class FirebaseWeb3Connect {
 			? {
 					address: this._address,
 					did: this._did,
-					publicKey: this._publicKey
+					publicKey: this._publicKey,
+					uid: this._uid
 				}
 			: null;
 	}
@@ -108,7 +110,7 @@ export class FirebaseWeb3Connect {
 				return this.userInfo;
 			}
 			this._secret = password;
-			await this.initWallet({
+			await this._initWallet({
 				isAnonymous,
 				uid
 			});
@@ -135,9 +137,51 @@ export class FirebaseWeb3Connect {
 	}
 
 	/**
+	 * Method that manage the entire wallet management process base on user state.
+	 * Wallet values are set with the corresponding method base on the user authentication provider.
+	 * If no user is connected, all wallet values are set to null with a default provider and the method will return null.
+	 *
+	 * @param cb Call back function that return the formated user information to the caller.
+	 * @returns
+	 */
+	public onConnectStateChanged(
+		cb: (user: { address: string; did: string } | null) => void
+	) {
+		return authProvider.getOnAuthStateChanged(async user => {
+			this._uid = user?.uid;
+
+			if (!this.userInfo && user) {
+				try {
+					await this._initWallet(user);
+				} catch (error: unknown) {
+					await authProvider.signOut();
+					await storageService.clear();
+					const message =
+						(error as Error)?.message || 'An error occured while connecting';
+					console.error('[ERROR] onConnectStateChanged:', message);
+					//throw error;
+				}
+			} else {
+				this._secret = undefined;
+				this._address = undefined;
+				this._did = undefined;
+				this._publicKey = undefined;
+				this._uid = undefined;
+				this._provider = getDefaultProvider();
+			}
+			console.log('[INFO] onConnectStateChanged:', {
+				user,
+				userInfo: this.userInfo,
+				_secret: this._secret
+			});
+			cb(user ? this.userInfo : null);
+		});
+	}
+
+	/**
 	 * Method that initialize the wallet base on the user state.
 	 */
-	public async initWallet(
+	private async _initWallet(
 		user: {
 			uid: string;
 			isAnonymous: boolean;
@@ -168,45 +212,6 @@ export class FirebaseWeb3Connect {
 		return this.userInfo;
 	}
 
-	/**
-	 * Method that manage the entire wallet management process base on user state.
-	 * Wallet values are set with the corresponding method base on the user authentication provider.
-	 * If no user is connected, all wallet values are set to null with a default provider and the method will return null.
-	 *
-	 * @param cb Call back function that return the formated user information to the caller.
-	 * @returns
-	 */
-	public onConnectStateChanged(
-		cb: (user: { address: string; did: string } | null) => void
-	) {
-		return authProvider.getOnAuthStateChanged(async user => {
-			if (!this.userInfo && user) {
-				try {
-					await this.initWallet(user);
-				} catch (error: unknown) {
-					await authProvider.signOut();
-					await storageService.clear();
-					const message =
-						(error as Error)?.message || 'An error occured while connecting';
-					console.error('[ERROR] onConnectStateChanged:', message);
-					//throw error;
-				}
-			} else {
-				this._secret = undefined;
-				this._address = null;
-				this._did = null;
-				this._publicKey = null;
-				this._provider = getDefaultProvider();
-			}
-			console.log('[INFO] onConnectStateChanged:', {
-				user,
-				userInfo: this.userInfo,
-				_secret: this._secret
-			});
-			cb(user ? this.userInfo : null);
-		});
-	}
-
 	private async _setValues(values: {
 		did: string;
 		address: string;
@@ -214,7 +219,7 @@ export class FirebaseWeb3Connect {
 		privateKey?: string;
 		publicKey?: string;
 	}) {
-		const { did, address, provider, publicKey = null } = values;
+		const { did, address, provider, publicKey = undefined } = values;
 		this._did = did;
 		this._address = address;
 		this._provider = provider;
