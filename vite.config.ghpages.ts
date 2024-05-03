@@ -4,6 +4,7 @@ import inject from '@rollup/plugin-inject';
 
 export default defineConfig({
 	plugins: [libInjectCss()],
+	base: '/firebase-web3connect/',
 	build: {
 		target: 'esnext',
 		rollupOptions: {
