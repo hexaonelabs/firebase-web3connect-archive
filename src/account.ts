@@ -8,11 +8,8 @@ export function setupAccountTab(
 	element.innerHTML = `
     <h1>Connected</h1>
     <p id="address">${wallet?.userInfo?.address}</p>
-    <p id="did">${wallet?.userInfo?.did}</p>
 
     <input id="content" type="text" /><br/>
-    <button id="sign">sign</button>
-    <button id="verify">verify</button><br/>
     <button id="signout">signout</button>
   `;
 
