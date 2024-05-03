@@ -60,6 +60,21 @@ export default defineConfig({
 					{ text: 'Use SDK', link: '/sdk/usage' },
 					{ text: 'Configure SDK options', link: '/sdk/options' }
 				]
+			},
+			{
+				text: 'Demo',
+				items: [
+					{
+						text: 'Live demo',
+						link: 'https://hexaonelabs.github.io/firebase-web3connect/',
+						target: '_blank'
+					},
+					{
+						text: 'Demo source code',
+						link: 'https://github.com/hexaonelabs/firebase-web3connect/tree/master/src/',
+						target: '_blank'
+					}
+				]
 			}
 		],
 
