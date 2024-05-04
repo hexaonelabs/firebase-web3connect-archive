@@ -2,6 +2,7 @@ import html from './dialogElement.html?raw';
 import css from './dialogElement.css?raw';
 import { DEFAULT_SIGNIN_METHODS, SigninMethod } from '../../constant';
 import { promptPasswordElement } from '../prompt-password-element/prompt-password-element';
+import { promptEmailPasswordElement } from '../prompt-email-password-element/prompt-email-password-element';
 import { promptToDownloadElement } from '../prompt-download-element/prompt-download-element';
 import { SpinnerElement } from '../spinner-element/spinner-element';
 import { promptWalletTypeElement } from '../prompt-wallet-type-element/prompt-wallet-type-element';
@@ -389,6 +390,13 @@ export class HexaSigninDialogElement
 
 	public async promptPassword() {
 		const value = await promptPasswordElement(
+			this.shadowRoot?.querySelector('dialog #spinner') as HTMLElement
+		);
+		return value;
+	}
+
+	public async promptEmailPassword() {
+		const value = await promptEmailPasswordElement(
 			this.shadowRoot?.querySelector('dialog #spinner') as HTMLElement
 		);
 		return value;

@@ -13,7 +13,9 @@ import {
 	Auth,
 	onAuthStateChanged as onAuthStateChangedFirebase,
 	User,
-	browserPopupRedirectResolver
+	browserPopupRedirectResolver,
+	signInWithEmailAndPassword,
+	createUserWithEmailAndPassword
 } from 'firebase/auth';
 import { IAuthProvider } from '../../interfaces/auth-provider.interface';
 import { KEYS } from '../../constant';
@@ -91,6 +93,30 @@ const signInAsAnonymous = async () => {
 	return await signInAnonymously(auth);
 };
 
+const signInWithEmailPwd = async (email: string, password: string) => {
+	try {
+		// Create user with email and password
+		const credential = await createUserWithEmailAndPassword(
+			auth,
+			email,
+			password
+		);
+		return credential.user;
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	} catch (error: any) {
+		// only error with { code: string } type
+		if (error?.code === 'auth/email-already-in-use') {
+			const credential = await signInWithEmailAndPassword(
+				auth,
+				email,
+				password
+			);
+			return credential.user;
+		}
+		throw error;
+	}
+};
+
 const signOut = async () => {
 	await signOutFormFirebase(auth);
 };
@@ -112,6 +138,7 @@ const FirebaseAuthProvider: IAuthProvider = {
 	sendLinkToEmail,
 	signInWithLink,
 	signInAsAnonymous,
+	signInWithEmailPwd,
 	signOut,
 	getOnAuthStateChanged,
 	getCurrentUserAuth,

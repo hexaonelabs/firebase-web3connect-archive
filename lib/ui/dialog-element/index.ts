@@ -5,7 +5,8 @@ import { KEYS } from '../../constant';
 import {
 	authByImportPrivateKey,
 	authWithExternalWallet,
-	authWithGoogle
+	authWithGoogle,
+	authWithEmailPwd
 } from '../../services/auth.servcie';
 import { promptImportPrivatekeyElement } from '../prompt-import-privatekey-element/prompt-import-privatekey-element';
 import { storageService } from '../../services/storage.service';
@@ -89,7 +90,35 @@ const addAndWaitUIEventsResult = (
 						return;
 					}
 				}
-				// if (detail === 'connect-email') {
+				if (detail === 'connect-email') {
+					try {
+						const { password, email } =
+							await dialogElement.promptEmailPassword();
+						// prompt to download private key if not already stored
+						const privateKey = await storageService.getItem(
+							KEYS.STORAGE_PRIVATEKEY_KEY
+						);
+						const { withEncryption, skip } = !privateKey
+							? await dialogElement.promptBackup()
+							: { withEncryption: false, skip: true };
+						// use service to request connection with google
+						const { uid } = await authWithEmailPwd({
+							email,
+							password,
+							skip,
+							withEncryption
+						});
+						await dialogElement.toggleSpinnerAsCheck();
+						resolve({ uid, password });
+					} catch (error: unknown) {
+						const message =
+							(error as Error)?.message ||
+							'An error occured. Please try again.';
+						reject(new Error(`${message}`));
+						return;
+					}
+				}
+				// if (detail === 'connect-email-link') {
 				//   try {
 				//     const sub = this.onConnectStateChanged(async (user) => {
 				//       if (user) {
