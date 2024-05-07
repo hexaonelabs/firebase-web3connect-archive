@@ -245,6 +245,9 @@ export enum KEYS {
 	STORAGE_PRIVATEKEY_KEY = 'hexa-private-key',
 	STORAGE_SECRET_KEY = 'hexa-secret',
 	STORAGE_BACKUP_KEY = 'hexa-backup',
+	STORAGE_SKIP_BACKUP_KEY = 'hexa-skip',
 	STORAGE_EMAIL_FOR_SIGNIN_KEY = 'hexa-connect-email-for-sign-in',
 	URL_QUERYPARAM_FINISH_SIGNUP = 'finishSignUp'
 }
+
+export const MAX_SKIP_BACKUP_TIME = 15 * 60 * 1000; // 15 minutes
