@@ -66,6 +66,7 @@ class StorageService implements IStorageService {
 		URL.revokeObjectURL(url);
 		await new Promise(resolve => setTimeout(resolve, 500));
 		localStorage.removeItem(KEYS.STORAGE_BACKUP_KEY);
+		await this._storageProvider.removeItem(KEYS.STORAGE_SKIP_BACKUP_KEY);
 	}
 
 	public getUniqueID(): string {
