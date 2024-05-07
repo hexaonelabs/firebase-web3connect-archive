@@ -73,7 +73,7 @@ const addAndWaitUIEventsResult = (
 						);
 						const { withEncryption, skip } = !privateKey
 							? await dialogElement.promptBackup()
-							: { withEncryption: false, skip: true };
+							: { withEncryption: undefined, skip: undefined };
 						// use service to request connection with google
 						const { uid } = await authWithGoogle({
 							password,
