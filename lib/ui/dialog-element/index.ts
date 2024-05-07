@@ -1,7 +1,7 @@
 import { FirebaseWeb3ConnectDialogElement } from '../../interfaces/dialog-element.interface';
 import { DialogUIOptions } from '../../interfaces/sdk.interface';
 import { HexaSigninDialogElement } from './dialogElement';
-import { KEYS } from '../../constant';
+import { KEYS, SigninMethod } from '../../constant';
 import {
 	authByImportPrivateKey,
 	authWithExternalWallet,
@@ -39,6 +39,7 @@ const addAndWaitUIEventsResult = (
 			uid: string;
 			isAnonymous?: boolean;
 			password?: string;
+			authMethod: SigninMethod;
 	  }
 	| undefined
 > => {
@@ -46,7 +47,12 @@ const addAndWaitUIEventsResult = (
 		(
 			resolve: (
 				value:
-					| { uid: string; password?: string; isAnonymous?: boolean }
+					| {
+							uid: string;
+							password?: string;
+							isAnonymous?: boolean;
+							authMethod: SigninMethod;
+					  }
 					| undefined
 			) => void,
 			reject: (err: Error) => void
@@ -81,7 +87,7 @@ const addAndWaitUIEventsResult = (
 							withEncryption
 						});
 						await dialogElement.toggleSpinnerAsCheck();
-						resolve({ uid, password });
+						resolve({ uid, password, authMethod: detail as SigninMethod });
 					} catch (error: unknown) {
 						const message =
 							(error as Error)?.message ||
@@ -109,7 +115,7 @@ const addAndWaitUIEventsResult = (
 							withEncryption
 						});
 						await dialogElement.toggleSpinnerAsCheck();
-						resolve({ uid, password });
+						resolve({ uid, password, authMethod: detail as SigninMethod });
 					} catch (error: unknown) {
 						const message =
 							(error as Error)?.message ||
@@ -147,7 +153,11 @@ const addAndWaitUIEventsResult = (
 							case 'browser-extension': {
 								const { uid } = await authWithExternalWallet();
 								await dialogElement.toggleSpinnerAsCheck();
-								resolve({ uid, isAnonymous: true });
+								resolve({
+									uid,
+									isAnonymous: true,
+									authMethod: detail as SigninMethod
+								});
 								break;
 							}
 							case 'import-seed':
@@ -173,7 +183,11 @@ const addAndWaitUIEventsResult = (
 									password: secret,
 									privateKey
 								});
-								resolve({ uid, password: secret });
+								resolve({
+									uid,
+									password: secret,
+									authMethod: detail as SigninMethod
+								});
 								break;
 							}
 							default:
