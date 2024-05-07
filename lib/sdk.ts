@@ -6,7 +6,12 @@ import {
 	addAndWaitUIEventsResult,
 	setupSigninDialogElement
 } from './ui/dialog-element';
-import { CHAIN_DEFAULT, DEFAULT_SIGNIN_METHODS, KEYS } from './constant';
+import {
+	CHAIN_DEFAULT,
+	DEFAULT_SIGNIN_METHODS,
+	KEYS,
+	MAX_SKIP_BACKUP_TIME
+} from './constant';
 // import { parseApiKey } from './utils';
 import { initWallet } from './services/wallet.service.ts';
 import { Auth } from 'firebase/auth';
@@ -110,18 +115,40 @@ export class FirebaseWeb3Connect {
 				return this.userInfo;
 			}
 			this._secret = password;
+			// init wallet to set user info
 			await this._initWallet({
 				isAnonymous,
 				uid
 			});
-			// resolve result
-			// resolve(this.userInfo);
 		} catch (error: unknown) {
 			const message =
 				(error as Error)?.message || 'An error occured while connecting';
 			await dialogElement.toggleSpinnerAsCross(message);
 			throw error;
 		}
+
+		// check local storage to existing tag to trigger backup download of private key
+		const requestBackup = localStorage.getItem(KEYS.STORAGE_BACKUP_KEY);
+		if (this.userInfo && requestBackup && this._secret) {
+			await storageService.executeBackup(Boolean(requestBackup), this._secret);
+		}
+
+		// ask to download if user skip download prompt from more than 15 minutes
+		const skip = await storageService.getItem(KEYS.STORAGE_SKIP_BACKUP_KEY);
+		const skipTime = skip ? parseInt(skip) : Date.now();
+		// check if is more than 15 minutes
+		const isOut = Date.now() - skipTime > MAX_SKIP_BACKUP_TIME;
+		if (this.userInfo && isOut) {
+			const { withEncryption, skip: reSkip } =
+				await dialogElement.promptBackup();
+			if (!reSkip) {
+				await storageService.executeBackup(
+					Boolean(withEncryption),
+					this._secret
+				);
+			}
+		}
+
 		// close modal with animation and resolve the promise with user info
 		dialogElement.hideModal();
 		// wait 225ms to let the dialog close wth animation
@@ -161,7 +188,9 @@ export class FirebaseWeb3Connect {
 					console.error('[ERROR] onConnectStateChanged:', message);
 					//throw error;
 				}
-			} else {
+			}
+			// reset state if no user connected
+			if (!user) {
 				this._secret = undefined;
 				this._address = undefined;
 				this._did = undefined;
@@ -172,6 +201,7 @@ export class FirebaseWeb3Connect {
 			console.log('[INFO] onConnectStateChanged:', {
 				user,
 				userInfo: this.userInfo,
+				provider: this.provider,
 				_secret: this._secret
 			});
 			cb(user ? this.userInfo : null);

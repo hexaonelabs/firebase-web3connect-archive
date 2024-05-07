@@ -69,11 +69,7 @@ export const initWallet = async (
 					);
 					return wallet;
 				});
-	// // check local storage to existing tag to trigger backup download of the created private key
-	const requestBackup = localStorage.getItem(KEYS.STORAGE_BACKUP_KEY);
-	if (requestBackup) {
-		await storageService.executeBackup(Boolean(requestBackup), secret);
-	}
+
 	// return wallet values with the generated wallet
 	return { did, address, provider, publicKey, privateKey };
 };
