@@ -1,7 +1,6 @@
 import { passwordValidationOrSignature } from '../providers/crypto/password';
 import authProvider from '../providers/auth/firebase';
 import Crypto from '../providers/crypto/crypto';
-import evmWallet from '../networks/evm';
 import { CHAIN_DEFAULT, KEYS } from '../constant';
 import { storageService } from './storage.service';
 
@@ -81,13 +80,10 @@ export const authWithExternalWallet = async (
 	networkId: number = CHAIN_DEFAULT.id
 ) => {
 	console.log('authWithExternalWallet:', { networkId });
-
-	const { did, address, provider } =
-		await evmWallet.connectWithExternalWallet();
 	const {
 		user: { uid }
 	} = await authProvider.signInAsAnonymous();
-	return { did, address, provider, uid };
+	return { uid };
 };
 
 export const authByImportPrivateKey = async (ops: {

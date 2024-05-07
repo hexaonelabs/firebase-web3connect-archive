@@ -1,4 +1,3 @@
-import { providers, getDefaultProvider } from 'ethers';
 import authProvider from './providers/auth/firebase';
 import storageProvider from './providers/storage/local';
 import './ui/dialog-element/dialogElement';
@@ -18,30 +17,31 @@ import { initWallet } from './services/wallet.service.ts';
 import { Auth } from 'firebase/auth';
 import { SDKOptions } from './interfaces/sdk.interface.ts';
 import { storageService } from './services/storage.service.ts';
+import { Web3Wallet } from './networks/web3-wallet.ts';
 
 export class FirebaseWeb3Connect {
 	private readonly _apiKey!: string;
 	private _ops?: SDKOptions;
 	private _secret!: string | undefined;
-	private _provider!: providers.JsonRpcProvider | providers.BaseProvider;
-	private _publicKey!: string | undefined;
-	private _did!: string | undefined;
-	private _address!: string | undefined;
 	private _uid!: string | undefined;
+	private _wallet!: Web3Wallet | undefined;
 
 	get provider() {
-		return this._provider;
+		return this._wallet?.provider;
 	}
 
 	get userInfo() {
-		return this._address && this._did
+		return this._wallet
 			? {
-					address: this._address,
-					did: this._did,
-					publicKey: this._publicKey,
+					address: this._wallet.address,
+					publicKey: this._wallet.publicKey,
 					uid: this._uid
 				}
 			: null;
+	}
+
+	get wallet() {
+		return this._wallet;
 	}
 
 	constructor(auth: Auth, apiKey: string, ops?: SDKOptions) {
@@ -183,9 +183,7 @@ export class FirebaseWeb3Connect {
 	 * @param cb Call back function that return the formated user information to the caller.
 	 * @returns
 	 */
-	public onConnectStateChanged(
-		cb: (user: { address: string; did: string } | null) => void
-	) {
+	public onConnectStateChanged(cb: (user: { address: string } | null) => void) {
 		return authProvider.getOnAuthStateChanged(async user => {
 			this._uid = user?.uid;
 
@@ -204,11 +202,7 @@ export class FirebaseWeb3Connect {
 			// reset state if no user connected
 			if (!user) {
 				this._secret = undefined;
-				this._address = undefined;
-				this._did = undefined;
-				this._publicKey = undefined;
-				this._uid = undefined;
-				this._provider = getDefaultProvider();
+				this._wallet = undefined;
 			}
 			console.log('[INFO] onConnectStateChanged:', {
 				user,
@@ -248,23 +242,12 @@ export class FirebaseWeb3Connect {
 		if (!wallet) {
 			return null;
 		}
-		const { did, address, provider, publicKey, privateKey } = wallet;
 		// set wallet values with the generated wallet
-		await this._setValues({ did, address, provider, publicKey, privateKey });
+		await this._setWallet(wallet);
 		return this.userInfo;
 	}
 
-	private async _setValues(values: {
-		did: string;
-		address: string;
-		provider: providers.JsonRpcProvider;
-		privateKey?: string;
-		publicKey?: string;
-	}) {
-		const { did, address, provider, publicKey = undefined } = values;
-		this._did = did;
-		this._address = address;
-		this._provider = provider;
-		this._publicKey = publicKey;
+	private async _setWallet(wallet: Web3Wallet) {
+		this._wallet = wallet;
 	}
 }
