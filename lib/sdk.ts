@@ -10,7 +10,8 @@ import {
 	CHAIN_DEFAULT,
 	DEFAULT_SIGNIN_METHODS,
 	KEYS,
-	MAX_SKIP_BACKUP_TIME
+	MAX_SKIP_BACKUP_TIME,
+	SigninMethod
 } from './constant';
 // import { parseApiKey } from './utils';
 import { initWallet } from './services/wallet.service.ts';
@@ -87,10 +88,17 @@ export class FirebaseWeb3Connect {
 	}
 
 	public async connectWithUI(isLightMode: boolean = false) {
+		// check if have an existing auth method setup
+		const authMethod = (await storageService.getItem(
+			KEYS.STORAGE_AUTH_METHOD_KEY
+		)) as SigninMethod | null;
 		// build UI
 		const dialogElement = setupSigninDialogElement(document.body, {
 			isLightMode,
-			enabledSigninMethods: this._ops?.enabledSigninMethods,
+			enabledSigninMethods:
+				authMethod && authMethod !== SigninMethod.Wallet
+					? [authMethod, SigninMethod.Wallet]
+					: this._ops?.enabledSigninMethods,
 			integrator: this._ops?.dialogUI?.integrator,
 			logoUrl: this._ops?.dialogUI?.logoUrl
 		});
@@ -101,9 +109,13 @@ export class FirebaseWeb3Connect {
 			const {
 				password,
 				isAnonymous = false,
-				uid
+				uid,
+				authMethod
 			} = (await addAndWaitUIEventsResult(dialogElement)) || {};
-
+			// store default auth method
+			if (authMethod && authMethod !== SigninMethod.Wallet) {
+				await storageService.setItem(KEYS.STORAGE_AUTH_METHOD_KEY, authMethod);
+			}
 			console.log(`[INFO] Closing dialog`, { password, isAnonymous, uid });
 			// handle close event && anonymous user
 			if (!uid || isAnonymous) {
