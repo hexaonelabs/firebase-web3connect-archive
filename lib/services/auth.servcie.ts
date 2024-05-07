@@ -34,6 +34,12 @@ export const authWithGoogle = async (ops: {
 	);
 	await storageService.setItem(KEYS.STORAGE_SECRET_KEY, encryptedSecret);
 
+	// store to local storage tag to trigger download of the private key
+	// if user want to skip now and download later on connectWithUI()
+	// use timestamp to trigger download later
+	if (skip === true) {
+		await storageService.setItem(KEYS.STORAGE_SKIP_BACKUP_KEY, `${Date.now()}`);
+	}
 	// Now we can connect with Google
 	return await authProvider.signinWithGoogle();
 };
@@ -98,9 +104,7 @@ export const authByImportPrivateKey = async (ops: {
 	);
 	// trigger Auth with Google
 	const { uid } = await authWithGoogle({
-		password,
-		skip: true,
-		withEncryption: true
+		password
 	});
 	return { uid };
 };
