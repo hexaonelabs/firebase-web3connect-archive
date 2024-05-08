@@ -45,37 +45,30 @@ export const initWallet = async (
 	}
 
 	// connect using auth service
-	// check if encrypted private key is available from storage
-	const storedEncryptedPrivateKey = await storageService.getItem(
+	// check if encrypted mnemonic is available from storage
+	const storedEncryptedMnemonic = await storageService.getItem(
 		KEYS.STORAGE_PRIVATEKEY_KEY
 	);
-	// generate wallet from encrypted private key or generate new from random mnemonic
-	if (storedEncryptedPrivateKey) {
-		// decrypt private key before generating wallet
-		const storedPrivateKey = await Crypto.decrypt(
-			secret,
-			storedEncryptedPrivateKey
-		);
-		const wallet = await evmWallet.generateWalletFromPrivateKey(
-			storedPrivateKey,
-			chainId
-		);
-		return wallet;
-	} else {
-		const wallet = await evmWallet.generateWalletFromMnemonic();
-		if (!secret) {
-			await authProvider.signOut();
-			throw new Error('Secret is required to encrypt the private key.');
-		}
-		if (!wallet.privateKey) {
-			throw new Error('Failed to generate wallet from mnemonic');
-		}
-		// encrypt private key before storing it
-		const encryptedPrivateKey = await Crypto.encrypt(secret, wallet.privateKey);
+	const mnemonic = storedEncryptedMnemonic
+		? await Crypto.decrypt(secret, storedEncryptedMnemonic)
+		: undefined;
+	// generate wallet from encrypted mnemonic or generate new from random mnemonic
+
+	const wallet = await evmWallet.generateWalletFromMnemonic(mnemonic, chainId);
+	if (!secret) {
+		await authProvider.signOut();
+		throw new Error('Secret is required to encrypt the mnemonic.');
+	}
+	if (!wallet.privateKey) {
+		throw new Error('Failed to generate wallet from mnemonic');
+	}
+	// encrypt mnemonic before storing it
+	if (wallet.mnemonic) {
+		const encryptedMnemonic = await Crypto.encrypt(secret, wallet.mnemonic);
 		await storageService.setItem(
 			KEYS.STORAGE_PRIVATEKEY_KEY,
-			encryptedPrivateKey
+			encryptedMnemonic
 		);
-		return wallet;
 	}
+	return wallet;
 };

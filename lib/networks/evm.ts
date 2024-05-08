@@ -17,11 +17,16 @@ const generateDID = (address: string) => {
 
 class EVMWallet extends Web3Wallet {
 	public did!: string;
-	constructor(privateKey: string, provider: providers.JsonRpcProvider) {
-		super(privateKey, provider);
-		const wallet = new Wallet(privateKey, provider);
+
+	constructor(mnemonic: string, provider: providers.JsonRpcProvider) {
+		super(mnemonic, provider);
+		if (!this._mnemonic) {
+			throw new Error('Mnemonic is required to generate wallet');
+		}
+		const wallet = Wallet.fromMnemonic(this._mnemonic);
 		this.address = wallet.address;
 		this.publicKey = wallet.publicKey;
+		this.privateKey = wallet.privateKey;
 		this.did = generateDID(this.address);
 	}
 
@@ -59,83 +64,6 @@ class EVMWallet extends Web3Wallet {
 	}
 }
 
-// // Sign a message with a private key
-// export const signMessage = (message: string, privateKey: any) => {
-//   const wallet = new Wallet(privateKey);
-//   return wallet.signMessage(message);
-// };
-
-// // Verify a message signature with a public key or address
-// export const verifySignature = (
-//   message: string,
-//   signature: string,
-//   publicKeyOrAddress: string
-// ) => {
-//   try {
-//     const recoveredAddress = utils.verifyMessage(message, signature);
-//     if (recoveredAddress.toLowerCase() === publicKeyOrAddress.toLowerCase()) {
-//       return true; // Signature is valid
-//     }
-//     return false; // Signature does not match public key or address
-//   } catch (error) {
-//     console.log(error);
-//     return false; // Invalid signature format
-//   }
-// };
-
-// // Verify an EVM signature with a message hash and signature
-// export const verifyEvmSignature = (
-//   messageHash: string,
-//   signature: string,
-//   address: string
-// ) => {
-//   const wallet = new Wallet(address);
-//   console.log(wallet);
-//   const recoveredAddress = utils.verifyMessage(
-//     utils.arrayify(messageHash),
-//     signature
-//   );
-//   return recoveredAddress.toLowerCase() === wallet.address.toLowerCase();
-// };
-
-// // Génère une clé privée à partir d'un mot de passe et d'un sel
-// export const generatePrivateKeyFromPassword = (
-//   password: string,
-//   salt: string
-// ) => {
-//   // Applique PBKDF2 avec SHA-256 pour dériver la clé
-//   const key = PBKDF2(password, salt, { keySize: 256 / 32, iterations: 10000 });
-//   // Retourne la clé dérivée en format hexadécimal
-//   const wallet = new Wallet(key.toString());
-//   return wallet.privateKey;
-// };
-
-// export const generateEvmAddress = (
-//   derivativePrivateKey: string = generatePrivateKey(),
-//   chainId?: number
-// ) => {
-//   const chain = chainId
-//   ? CHAIN_AVAILABLES.find((c) => c.id === chainId) || CHAIN_DEFAULT
-//   : CHAIN_DEFAULT;
-//   // build default provider
-//   const provider = new providers.JsonRpcProvider(
-//     chain.rpcUrl,
-//     chain.id
-//   );
-//   const { privateKey, publicKey, address } = new Wallet(
-//     derivativePrivateKey,
-//     provider
-//   );
-//   const ethrDid = generateDID(address);
-//   return {
-//     privateKey,
-//     publicKey,
-//     address,
-//     did: ethrDid,
-//     provider,
-//   };
-// };
-
 const generateWalletFromMnemonic = async (
 	mnemonic: string = generateMnemonic(),
 	chainId?: number
@@ -146,31 +74,30 @@ const generateWalletFromMnemonic = async (
 	}
 	const chain = CHAIN_AVAILABLES.find(c => c.id === chainId) || CHAIN_DEFAULT;
 	const provider = new providers.JsonRpcProvider(chain.rpcUrl, chain.id);
-	const wallet = Wallet.fromMnemonic(mnemonic);
-	const web3Wallet = new EVMWallet(wallet.privateKey, provider);
+	const web3Wallet = new EVMWallet(mnemonic, provider);
 	return web3Wallet;
 };
 
-const generateWalletFromPrivateKey = async (
-	privateKey: string,
-	chainId?: number
-): Promise<Web3Wallet> => {
-	if (!utils.isHexString(privateKey)) {
-		throw new Error('Invalid private key');
-	}
+// const generateWalletFromPrivateKey = async (
+// 	privateKey: string,
+// 	chainId?: number
+// ): Promise<Web3Wallet> => {
+// 	if (!utils.isHexString(privateKey)) {
+// 		throw new Error('Invalid private key');
+// 	}
 
-	const chain = CHAIN_AVAILABLES.find(c => c.id === chainId) || CHAIN_DEFAULT;
-	const provider = new providers.JsonRpcProvider(chain.rpcUrl, chain.id);
-	const wallet = new EVMWallet(privateKey, provider);
-	return wallet;
-	// const ethrDid = generateDID(wallet.address);
-	// return {
-	// 	privateKey: wallet.privateKey,
-	// 	publicKey: wallet.publicKey,
-	// 	address: wallet.address,
-	// 	provider
-	// };
-};
+// 	const chain = CHAIN_AVAILABLES.find(c => c.id === chainId) || CHAIN_DEFAULT;
+// 	const provider = new providers.JsonRpcProvider(chain.rpcUrl, chain.id);
+// 	const wallet = new EVMWallet(privateKey, provider);
+// 	return wallet;
+// 	// const ethrDid = generateDID(wallet.address);
+// 	// return {
+// 	// 	privateKey: wallet.privateKey,
+// 	// 	publicKey: wallet.publicKey,
+// 	// 	address: wallet.address,
+// 	// 	provider
+// 	// };
+// };
 
 interface WindowWithEthereumProvider extends Window {
 	ethereum: providers.ExternalProvider;
@@ -212,6 +139,7 @@ const connectWithExternalWallet = async (): Promise<Web3Wallet> => {
 	return {
 		privateKey: undefined,
 		publicKey: undefined,
+		mnemonic: undefined,
 		address,
 		provider: web3Provider,
 		sendTransaction: async (
@@ -233,7 +161,6 @@ const connectWithExternalWallet = async (): Promise<Web3Wallet> => {
 
 const evmWallet: Readonly<IWalletProvider> = Object.freeze({
 	connectWithExternalWallet,
-	generateWalletFromPrivateKey,
 	generateWalletFromMnemonic,
 	generateDID
 });

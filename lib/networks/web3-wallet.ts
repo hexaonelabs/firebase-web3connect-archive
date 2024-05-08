@@ -1,14 +1,19 @@
 import { providers } from 'ethers';
 
 export abstract class Web3Wallet {
-	address!: string;
-	privateKey: string | undefined;
-	publicKey: string | undefined;
-	provider: providers.JsonRpcProvider | undefined;
+	public address!: string;
+	public publicKey: string | undefined;
+	public provider: providers.JsonRpcProvider | undefined;
+	public privateKey: string | undefined;
+	protected _mnemonic?: string;
 
-	constructor(privateKey: string, provider: providers.JsonRpcProvider) {
-		this.privateKey = privateKey;
+	constructor(mnemonic: string, provider: providers.JsonRpcProvider) {
+		this._mnemonic = mnemonic;
 		this.provider = provider;
+	}
+
+	get mnemonic() {
+		return this._mnemonic;
 	}
 
 	abstract sendTransaction(tx: unknown): Promise<providers.TransactionResponse>;
