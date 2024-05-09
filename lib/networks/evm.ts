@@ -65,6 +65,23 @@ class EVMWallet extends Web3Wallet {
 		}
 		return utils.verifyMessage(message, signature) === this.address;
 	}
+
+	async switchNetwork(chainId: number): Promise<void> {
+		if (this.chainId === chainId) {
+			return;
+		}
+		const chain = CHAIN_AVAILABLES.find(c => c.id === chainId);
+		if (!chain) {
+			throw new Error('Chain not available');
+		}
+		if (!this.provider) {
+			throw new Error('Provider not available');
+		}
+		const chainIdAsHex = utils.hexValue(chainId);
+		await this.provider.send('wallet_switchEthereumChain', [
+			{ chainId: chainIdAsHex }
+		]);
+	}
 }
 
 const generateWalletFromMnemonic = async (
@@ -149,6 +166,19 @@ const connectWithExternalWallet = async (): Promise<Web3Wallet> => {
 		address,
 		chainId,
 		provider: web3Provider,
+		switchNetwork: async (chainId: number): Promise<void> => {
+			const chain = CHAIN_AVAILABLES.find(c => c.id === chainId);
+			if (!chain) {
+				throw new Error('Chain not available');
+			}
+			if (chain.type !== 'evm') {
+				throw new Error('Only EVM chain is supported with external wallet.');
+			}
+			const chainIdAsHex = utils.hexValue(chainId);
+			await web3Provider.send('wallet_switchEthereumChain', [
+				{ chainId: chainIdAsHex }
+			]);
+		},
 		sendTransaction: async (
 			tx: utils.Deferrable<providers.TransactionRequest>
 		) => {

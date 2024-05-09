@@ -6,6 +6,7 @@ import {
 	setupSigninDialogElement
 } from './ui/dialog-element';
 import {
+	CHAIN_AVAILABLES,
 	CHAIN_DEFAULT,
 	DEFAULT_SIGNIN_METHODS,
 	KEYS,
@@ -225,9 +226,19 @@ export class FirebaseWeb3Connect {
 		if (this._wallet?.chainId === chainId) {
 			return this.userInfo;
 		}
+		const chain = CHAIN_AVAILABLES.find(chain => chain.id === chainId);
 		// check if an existing Wallet is available
-		const wallet = this._wallets.find(wallet => wallet.chainId === chainId);
+		const wallet = this._wallets.find(
+			wallet =>
+				wallet.chainId === chainId ||
+				CHAIN_AVAILABLES.find(chain => chain.id === wallet.chainId)?.type ===
+					chain?.type
+		);
 		if (wallet) {
+			// check if wallet have same chainId or switch
+			if (wallet.chainId !== chainId) {
+				await wallet.switchNetwork(chainId);
+			}
 			await this._setWallet(wallet);
 			return this.userInfo;
 		}

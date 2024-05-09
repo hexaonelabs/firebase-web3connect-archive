@@ -65,6 +65,11 @@ class BTCWallet extends Web3Wallet {
 		console.log('verifySignature', message, signature);
 		throw new Error('Method not implemented.');
 	}
+
+	async switchNetwork(chainId: number): Promise<void> {
+		console.log('switchNetwork', chainId);
+		throw new Error('Method not implemented.');
+	}
 }
 
 const generateWalletFromMnemonic = async (ops: {

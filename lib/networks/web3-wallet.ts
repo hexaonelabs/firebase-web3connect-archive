@@ -20,4 +20,5 @@ export abstract class Web3Wallet {
 	abstract signTransaction(tx: unknown): Promise<string>;
 	abstract signMessage(message: string): Promise<string>;
 	abstract verifySignature(message: string, signature: string): boolean;
+	abstract switchNetwork(chainId: number): Promise<void>;
 }
