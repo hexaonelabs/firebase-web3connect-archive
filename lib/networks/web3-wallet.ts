@@ -5,11 +5,11 @@ export abstract class Web3Wallet {
 	public publicKey: string | undefined;
 	public provider: providers.JsonRpcProvider | undefined;
 	public privateKey: string | undefined;
+	public abstract chainId: number;
 	protected _mnemonic?: string;
 
-	constructor(mnemonic: string, provider: providers.JsonRpcProvider) {
+	constructor(mnemonic: string) {
 		this._mnemonic = mnemonic;
-		this.provider = provider;
 	}
 
 	get mnemonic() {

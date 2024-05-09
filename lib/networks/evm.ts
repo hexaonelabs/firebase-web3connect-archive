@@ -17,9 +17,10 @@ const generateDID = (address: string) => {
 
 class EVMWallet extends Web3Wallet {
 	public did!: string;
+	public chainId: number;
 
 	constructor(mnemonic: string, provider: providers.JsonRpcProvider) {
-		super(mnemonic, provider);
+		super(mnemonic);
 		if (!this._mnemonic) {
 			throw new Error('Mnemonic is required to generate wallet');
 		}
@@ -28,6 +29,8 @@ class EVMWallet extends Web3Wallet {
 		this.publicKey = wallet.publicKey;
 		this.privateKey = wallet.privateKey;
 		this.did = generateDID(this.address);
+		this.provider = provider;
+		this.chainId = provider.network.chainId;
 	}
 
 	sendTransaction(
@@ -65,9 +68,12 @@ class EVMWallet extends Web3Wallet {
 }
 
 const generateWalletFromMnemonic = async (
-	mnemonic: string = generateMnemonic(),
-	chainId?: number
+	ops: {
+		mnemonic?: string;
+		chainId?: number;
+	} = {}
 ) => {
+	const { mnemonic = generateMnemonic(), chainId } = ops;
 	// validate mnemonic
 	if (!validateMnemonic(mnemonic)) {
 		throw new Error('Invalid mnemonic');
@@ -141,6 +147,7 @@ const connectWithExternalWallet = async (): Promise<Web3Wallet> => {
 		publicKey: undefined,
 		mnemonic: undefined,
 		address,
+		chainId,
 		provider: web3Provider,
 		sendTransaction: async (
 			tx: utils.Deferrable<providers.TransactionRequest>
@@ -159,7 +166,9 @@ const connectWithExternalWallet = async (): Promise<Web3Wallet> => {
 	};
 };
 
-const evmWallet: Readonly<IWalletProvider> = Object.freeze({
+const evmWallet: Readonly<
+	IWalletProvider<{ mnemonic?: string; chainId?: number }>
+> = Object.freeze({
 	connectWithExternalWallet,
 	generateWalletFromMnemonic,
 	generateDID

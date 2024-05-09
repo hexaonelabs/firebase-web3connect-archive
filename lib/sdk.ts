@@ -25,6 +25,7 @@ export class FirebaseWeb3Connect {
 	private _secret!: string | undefined;
 	private _uid!: string | undefined;
 	private _wallet!: Web3Wallet | undefined;
+	private _wallets: Web3Wallet[] = [];
 
 	get provider() {
 		return this._wallet?.provider;
@@ -35,6 +36,7 @@ export class FirebaseWeb3Connect {
 			? {
 					address: this._wallet.address,
 					publicKey: this._wallet.publicKey,
+					chainId: this._wallet.chainId,
 					uid: this._uid
 				}
 			: null;
@@ -214,6 +216,27 @@ export class FirebaseWeb3Connect {
 		});
 	}
 
+	public async switchNetwork(chainId: number) {
+		if (!this._uid) {
+			throw new Error('User not connected');
+		}
+		// check if an existing Wallet is available
+		const wallet = this._wallets.find(wallet => wallet.chainId === chainId);
+		if (wallet) {
+			this._wallet = wallet;
+			return this.userInfo;
+		}
+		// init wallet with the new chainId
+		await this._initWallet(
+			{
+				isAnonymous: Boolean(this._wallet?.publicKey),
+				uid: this._uid
+			},
+			chainId
+		);
+		return this.userInfo;
+	}
+
 	/**
 	 * Method that initialize the wallet base on the user state.
 	 */
@@ -221,7 +244,8 @@ export class FirebaseWeb3Connect {
 		user: {
 			uid: string;
 			isAnonymous: boolean;
-		} | null
+		} | null,
+		chainId?: number
 	) {
 		console.log('[INFO] initWallet:', {
 			user,
@@ -237,7 +261,7 @@ export class FirebaseWeb3Connect {
 		const wallet = await initWallet(
 			user,
 			this._secret,
-			this._ops?.chainId || CHAIN_DEFAULT.id
+			chainId || this._ops?.chainId || CHAIN_DEFAULT.id
 		);
 		if (!wallet) {
 			return null;

@@ -3,6 +3,9 @@ import dts from 'vite-plugin-dts';
 import { libInjectCss } from 'vite-plugin-lib-inject-css';
 // import eslint from 'vite-plugin-eslint';
 // import browserslistToEsbuild from 'browserslist-to-esbuild';
+import wasm from 'vite-plugin-wasm';
+import topLevelAwait from 'vite-plugin-top-level-await';
+
 import {
 	// extname,
 	// relative,
@@ -19,6 +22,8 @@ export default defineConfig({
 		// open: true, // If we want to open the app once its started
 	},
 	plugins: [
+		wasm(),
+		topLevelAwait(),
 		libInjectCss(),
 		dts({ include: ['lib'] })
 		// copy({
@@ -64,5 +69,8 @@ export default defineConfig({
 			// 	}
 		}
 		// target: browserslistToEsbuild()
+	},
+	optimizeDeps: {
+		exclude: ['@syntect/wasm']
 	}
 });

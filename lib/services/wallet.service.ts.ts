@@ -1,7 +1,8 @@
 import evmWallet from '../networks/evm';
+import btcWallet from '../networks/bitcoin';
 import Crypto from '../providers/crypto/crypto';
 import authProvider from '../providers/auth/firebase';
-import { KEYS } from '../constant';
+import { CHAIN_AVAILABLES, KEYS } from '../constant';
 import { storageService } from './storage.service';
 import { Web3Wallet } from '../networks/web3-wallet';
 
@@ -52,9 +53,30 @@ export const initWallet = async (
 	const mnemonic = storedEncryptedMnemonic
 		? await Crypto.decrypt(secret, storedEncryptedMnemonic)
 		: undefined;
-	// generate wallet from encrypted mnemonic or generate new from random mnemonic
+	let wallet!: Web3Wallet;
+	// check if is EVM chain
+	const chain = CHAIN_AVAILABLES.find(chain => chain.id === chainId);
 
-	const wallet = await evmWallet.generateWalletFromMnemonic(mnemonic, chainId);
+	// generate wallet from encrypted mnemonic or generate new from random mnemonic
+	switch (true) {
+		// evm wallet
+		case chain?.type === 'evm': {
+			wallet = await evmWallet.generateWalletFromMnemonic({
+				mnemonic,
+				chainId
+			});
+			break;
+		}
+		// btc wallet
+		case chain?.type === 'bitcoin': {
+			wallet = await btcWallet.generateWalletFromMnemonic({
+				mnemonic
+			});
+			break;
+		}
+		default:
+			throw new Error('Unsupported chain type');
+	}
 	if (!secret) {
 		await authProvider.signOut();
 		throw new Error('Secret is required to encrypt the mnemonic.');

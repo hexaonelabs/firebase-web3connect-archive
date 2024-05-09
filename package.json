@@ -37,6 +37,7 @@
     "@semantic-release/release-notes-generator": "^13.0.0",
     "@types/crypto-js": "^4.2.2",
     "@types/jest": "^29.5.12",
+    "@types/tiny-secp256k1": "^2.0.1",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "browserslist-to-esbuild": "^2.1.1",
     "eslint": "^8.57.0",
@@ -63,16 +64,22 @@
     "vite-plugin-dts": "^3.8.1",
     "vite-plugin-eslint": "^1.8.1",
     "vite-plugin-lib-inject-css": "^2.0.1",
+    "vite-plugin-top-level-await": "^1.4.1",
+    "vite-plugin-wasm": "^3.3.0",
     "vitepress": "^1.1.0"
   },
   "dependencies": {
     "@fleekxyz/sdk": "^0.7.3",
+    "bip32": "^4.0.0",
     "bip39": "^3.1.0",
+    "bitcoinjs-lib": "^6.1.5",
     "buffer": "^6.0.3",
     "crypto-js": "^4.2.0",
     "crypto-random-string": "^5.0.0",
+    "ecpair": "^2.1.0",
     "ethers": "^5.7.2",
-    "firebase": "^10.10.0"
+    "firebase": "^10.10.0",
+    "tiny-secp256k1": "^2.2.3"
   },
   "peerDependencies": {
     "bip39": "^3.1.0",

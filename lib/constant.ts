@@ -42,8 +42,8 @@ const CHAINS_DISABLED = [
 	NETWORK.cosmos,
 	NETWORK.avalanche,
 	NETWORK.polkadot,
-	NETWORK.solana,
-	NETWORK.bitcoin
+	NETWORK.solana
+	// NETWORK.bitcoin
 ];
 
 export const CHAIN_AVAILABLES: IChain[] = [
