@@ -77,10 +77,9 @@ class EVMWallet extends Web3Wallet {
 		if (!this.provider) {
 			throw new Error('Provider not available');
 		}
-		const chainIdAsHex = utils.hexValue(chainId);
-		await this.provider.send('wallet_switchEthereumChain', [
-			{ chainId: chainIdAsHex }
-		]);
+		const provider = new providers.JsonRpcProvider(chain.rpcUrl, chain.id);
+		this.provider = provider;
+		this.chainId = chainId;
 	}
 }
 
