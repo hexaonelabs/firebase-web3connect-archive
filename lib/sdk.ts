@@ -10,6 +10,7 @@ import {
 	DEFAULT_SIGNIN_METHODS,
 	KEYS,
 	MAX_SKIP_BACKUP_TIME,
+	NETWORK,
 	SigninMethod
 } from './constant';
 // import { parseApiKey } from './utils';
@@ -130,7 +131,7 @@ export class FirebaseWeb3Connect {
 			}
 			this._secret = password;
 			// init wallet to set user info
-			await this._initWallet({
+			await this._initWallets({
 				isAnonymous,
 				uid
 			});
@@ -191,7 +192,7 @@ export class FirebaseWeb3Connect {
 
 			if (!this.userInfo && user) {
 				try {
-					await this._initWallet(user);
+					await this._initWallets(user);
 				} catch (error: unknown) {
 					await authProvider.signOut();
 					await storageService.clear();
@@ -220,13 +221,17 @@ export class FirebaseWeb3Connect {
 		if (!this._uid) {
 			throw new Error('User not connected');
 		}
+		// prevent switching to the same chain
+		if (this._wallet?.chainId === chainId) {
+			return this.userInfo;
+		}
 		// check if an existing Wallet is available
 		const wallet = this._wallets.find(wallet => wallet.chainId === chainId);
 		if (wallet) {
-			this._wallet = wallet;
+			await this._setWallet(wallet);
 			return this.userInfo;
 		}
-		// init wallet with the new chainId
+		// If not existing wallet, init new wallet with chainId
 		await this._initWallet(
 			{
 				isAnonymous: Boolean(this._wallet?.publicKey),
@@ -238,14 +243,45 @@ export class FirebaseWeb3Connect {
 	}
 
 	/**
-	 * Method that initialize the wallet base on the user state.
+	 * Method that initialize the main EVM wallet and all other type, base on the user state.
+	 */
+	private async _initWallets(user: { uid: string; isAnonymous: boolean }) {
+		if (!user) {
+			throw new Error(
+				'User not connected. Please sign in to connect with wallet'
+			);
+		}
+		// and no chainId is provided that mean chainId is the same as the current wallet
+		if (this.userInfo?.address) {
+			return this.userInfo;
+		}
+		const networkId = this._ops?.chainId || CHAIN_DEFAULT.id;
+		try {
+			const wallets = await Promise.all([
+				initWallet(user, this._secret, networkId),
+				initWallet(user, this._secret, NETWORK.bitcoin)
+			]);
+			this._wallets = wallets;
+			await this._setWallet(
+				wallets.find(wallet => wallet.chainId === networkId)
+			);
+			console.log(`[INFO] _initWallets:`, wallets);
+			return this._wallets;
+		} catch (error: unknown) {
+			console.error(`[ERROR] _initWallets:`, error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Method that add a new wallet to the wallet list and set the wallet as the main wallet.
 	 */
 	private async _initWallet(
 		user: {
 			uid: string;
 			isAnonymous: boolean;
-		} | null,
-		chainId?: number
+		},
+		chainId: number
 	) {
 		console.log('[INFO] initWallet:', {
 			user,
@@ -253,25 +289,22 @@ export class FirebaseWeb3Connect {
 			_secret: this._secret
 		});
 		if (!user) {
-			return null;
+			throw new Error(
+				'User not connected. Please sign in to connect with wallet'
+			);
 		}
-		if (this.userInfo?.address) {
-			return this.userInfo;
-		}
-		const wallet = await initWallet(
-			user,
-			this._secret,
-			chainId || this._ops?.chainId || CHAIN_DEFAULT.id
-		);
+		// generate wallet base on user state and chainId
+		const wallet = await initWallet(user, this._secret, chainId);
 		if (!wallet) {
-			return null;
+			throw new Error('Failed to generate wallet');
 		}
 		// set wallet values with the generated wallet
+		this._wallets.push(wallet);
 		await this._setWallet(wallet);
 		return this.userInfo;
 	}
 
-	private async _setWallet(wallet: Web3Wallet) {
+	private async _setWallet(wallet?: Web3Wallet) {
 		this._wallet = wallet;
 	}
 }

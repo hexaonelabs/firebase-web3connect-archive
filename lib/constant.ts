@@ -27,6 +27,8 @@ export enum NETWORK {
 	scroll = 534352
 }
 
+export type chainType = 'evm' | 'cosmos' | 'bitcoin' | 'solana' | 'polkadot';
+
 export interface IChain {
 	id: number;
 	value: string;
@@ -35,7 +37,7 @@ export interface IChain {
 	nativeSymbol?: string;
 	logo?: string;
 	testnet?: boolean;
-	type: 'evm' | 'cosmos' | 'bitcoin' | 'solana' | 'polkadot';
+	type: chainType;
 }
 
 const CHAINS_DISABLED = [

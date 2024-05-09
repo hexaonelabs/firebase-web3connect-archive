@@ -26,17 +26,13 @@ class BTCWallet extends Web3Wallet {
 		const seed = mnemonicToSeedSync(this._mnemonic);
 		const path = derivationPath;
 		// generate key pair
-		const node = bip32.fromSeed(seed);
-		const keyPair = node.derivePath(path);
-		const pubkey = keyPair.publicKey;
-		const publicKey = pubkey.toString('hex');
-		const privateKey = keyPair.toWIF();
+		const { privateKey, publicKey } = bip32.fromSeed(seed).derivePath(path);
 		if (!privateKey || !publicKey) {
 			throw new Error('Failed to generate key pair');
 		}
 		// generate address
 		const { address } = bitcoin.payments.p2pkh({
-			pubkey,
+			pubkey: publicKey,
 			network
 		});
 		// check if address is generated
@@ -45,8 +41,8 @@ class BTCWallet extends Web3Wallet {
 		}
 		// set wallet properties
 		this.address = address;
-		this.publicKey = publicKey;
-		this.privateKey = privateKey;
+		this.publicKey = publicKey.toString('hex');
+		this.privateKey = privateKey.toString('hex');
 		this.chainId = network.wif;
 	}
 
