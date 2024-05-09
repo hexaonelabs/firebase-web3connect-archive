@@ -56,19 +56,48 @@ class BTCWallet extends Web3Wallet {
 		throw new Error('Method not implemented.');
 	}
 
-	signMessage(message: string): Promise<string> {
+	async signMessage(message: string): Promise<string> {
 		console.log('signMessage', message);
-		throw new Error('Method not implemented.');
+		// Sign the message with the private key
+		const bufferMsg = Buffer.from(message, 'utf-8');
+		const hash = bitcoin.crypto.sha256(bufferMsg);
+		// generate KeyPair from private key
+		const keyPair = this._generateKeyPair();
+		const signature = keyPair.sign(hash);
+		console.log(`Signature: ${signature.toString('base64')}\n`);
+		return signature.toString('base64');
 	}
 
 	verifySignature(message: string, signature: string): boolean {
-		console.log('verifySignature', message, signature);
-		throw new Error('Method not implemented.');
+		if (!this.address) {
+			throw new Error('Address is required to verify signature');
+		}
+		const bufferMsg = Buffer.from(message, 'utf-8');
+		const hash = bitcoin.crypto.sha256(bufferMsg);
+		// generate KeyPair from private key
+		const keyPair = this._generateKeyPair();
+		const isValid = keyPair.verify(hash, Buffer.from(signature, 'base64'));
+		return isValid;
 	}
 
 	async switchNetwork(chainId: number): Promise<void> {
 		console.log('switchNetwork', chainId);
 		throw new Error('Method not implemented.');
+	}
+
+	private _generateKeyPair() {
+		if (!this._mnemonic) {
+			throw new Error('Mnemonic  is required to sign message');
+		}
+		const bip32 = BIP32Factory(ecc);
+		const seed = mnemonicToSeedSync(this._mnemonic);
+		const path = "m/44'/0'/0'/0/0";
+		// generate key pair
+		const keyPair = bip32.fromSeed(seed).derivePath(path);
+		if (!keyPair) {
+			throw new Error('Failed to generate key pair');
+		}
+		return keyPair;
 	}
 }
 

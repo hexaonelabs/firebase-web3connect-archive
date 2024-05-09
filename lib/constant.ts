@@ -184,13 +184,14 @@ export const CHAIN_AVAILABLES: IChain[] = [
 	//   )?.url||'',
 	// },
 	// testnets
-	// {
-	//   id: 5,
-	//   value: 'eth_goerli',
-	//   name: 'Goerli',
-	//   testnet: true,
-	//   rpcUrl: "https://rpc.ankr.com/eth_goerli",
-	// },
+	{
+		id: 11155111,
+		value: 'sepolia',
+		name: 'Sepolia',
+		testnet: true,
+		rpcUrl: 'https://ethereum-sepolia-rpc.publicnode.com',
+		type: 'evm'
+	},
 	// {
 	//   id: 80001,
 	//   value: 'polygon_mumbai',
@@ -240,6 +241,8 @@ export const CHAIN_DEFAULT = CHAIN_AVAILABLES.find(
 	rpcUrl: '',
 	type: 'evm'
 };
+
+export const TESTNET_CHAIN_DEFAULT = CHAIN_AVAILABLES.find(c => c.id === 80001);
 
 export enum KEYS {
 	AUTH_SIGNATURE_KEY = 'hexa-signature',
