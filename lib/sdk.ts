@@ -234,6 +234,7 @@ export class FirebaseWeb3Connect {
 				CHAIN_AVAILABLES.find(chain => chain.id === wallet.chainId)?.type ===
 					chain?.type
 		);
+		console.log(`[INFO] switchNetwork:`, { wallet, wallets: this._wallets });
 		if (wallet) {
 			// check if wallet have same chainId or switch
 			if (wallet.chainId !== chainId) {
@@ -267,6 +268,14 @@ export class FirebaseWeb3Connect {
 			return this.userInfo;
 		}
 		const networkId = this._ops?.chainId || CHAIN_DEFAULT.id;
+		// handle external wallet
+		if (user.isAnonymous) {
+			const wallet = await initWallet(user, this._secret, networkId);
+			this._wallets = [wallet];
+			await this._setWallet(wallet);
+			return this._wallets;
+		}
+		// handle local wallet
 		try {
 			const wallets = await Promise.all([
 				initWallet(user, this._secret, networkId),
