@@ -267,10 +267,10 @@ export class FirebaseWeb3Connect {
 		if (this.userInfo?.address) {
 			return this.userInfo;
 		}
-		const networkId = this._ops?.chainId || CHAIN_DEFAULT.id;
+		const defaultNetworkId = this._ops?.chainId || CHAIN_DEFAULT.id;
 		// handle external wallet
 		if (user.isAnonymous) {
-			const wallet = await initWallet(user, this._secret, networkId);
+			const wallet = await initWallet(user, this._secret, defaultNetworkId);
 			this._wallets = [wallet];
 			await this._setWallet(wallet);
 			return this._wallets;
@@ -278,12 +278,13 @@ export class FirebaseWeb3Connect {
 		// handle local wallet
 		try {
 			const wallets = await Promise.all([
-				initWallet(user, this._secret, networkId),
-				initWallet(user, this._secret, NETWORK.bitcoin)
+				initWallet(user, this._secret, defaultNetworkId),
+				initWallet(user, this._secret, NETWORK.bitcoin),
+				initWallet(user, this._secret, NETWORK.solana)
 			]);
 			this._wallets = wallets;
 			await this._setWallet(
-				wallets.find(wallet => wallet.chainId === networkId)
+				wallets.find(wallet => wallet.chainId === defaultNetworkId)
 			);
 			console.log(`[INFO] _initWallets:`, wallets);
 			return this._wallets;

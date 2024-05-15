@@ -5,6 +5,7 @@ import authProvider from '../providers/auth/firebase';
 import { CHAIN_AVAILABLES, KEYS } from '../constant';
 import { storageService } from './storage.service';
 import { Web3Wallet } from '../networks/web3-wallet';
+import solanaWallet from '../networks/solana';
 
 export const initWallet = async (
 	user: {
@@ -70,6 +71,13 @@ export const initWallet = async (
 		// btc wallet
 		case chain?.type === 'bitcoin': {
 			wallet = await btcWallet.generateWalletFromMnemonic({
+				mnemonic
+			});
+			break;
+		}
+		// solana wallet
+		case chain?.type === 'solana': {
+			wallet = await solanaWallet.generateWalletFromMnemonic({
 				mnemonic
 			});
 			break;

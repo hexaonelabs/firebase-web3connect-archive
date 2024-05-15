@@ -5,6 +5,7 @@ import { libInjectCss } from 'vite-plugin-lib-inject-css';
 // import browserslistToEsbuild from 'browserslist-to-esbuild';
 import wasm from 'vite-plugin-wasm';
 import topLevelAwait from 'vite-plugin-top-level-await';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 import {
 	// extname,
@@ -22,6 +23,7 @@ export default defineConfig({
 		// open: true, // If we want to open the app once its started
 	},
 	plugins: [
+		nodePolyfills(),
 		wasm(),
 		topLevelAwait(),
 		libInjectCss(),

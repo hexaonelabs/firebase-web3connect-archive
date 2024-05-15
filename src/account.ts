@@ -18,7 +18,8 @@ export function setupAccountTab(
 			<button id="eth">eth</button>
 			<button id="bsc">bsc</button>
 			<button id="pol">pol</button>
-			<button id="op">op</button><br/>
+			<button id="op">op</button>
+			<button id="sol">sol</button><br/>
 		</div>
 
 		<h2>Sign and Verify</h2>
@@ -87,6 +88,10 @@ export function setupAccountTab(
 				}
 				case target.id === 'op': {
 					await firebaseWeb3Connect.switchNetwork(NETWORK.optimism);
+					break;
+				}
+				case target.id === 'sol': {
+					await firebaseWeb3Connect.switchNetwork(NETWORK.solana);
 					break;
 				}
 			}
