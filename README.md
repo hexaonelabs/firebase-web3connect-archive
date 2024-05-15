@@ -16,8 +16,8 @@ Experience the simplicity of integrating Web3 authentication with Firebase Authe
 
 <!-- image overview with max size 300px-->
 <p align="center">
-  <img src="./public/firebase-web3connect-light.png" alt="Image 1" width="350" />
-  <img src="./public/firebase-web3connect-dark.png" alt="Image 2" width="350" />
+  <img src="https://github.com/hexaonelabs/firebase-web3connect/raw/master/public/firebase-web3connect-light.png" alt="Image 1" width="350" />
+  <img src="https://github.com/hexaonelabs/firebase-web3connect/raw/master/public/firebase-web3connect-dark.png" alt="Image 2" width="350" />
 </p>
 
 ## Features

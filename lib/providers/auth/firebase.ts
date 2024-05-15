@@ -12,7 +12,10 @@ import {
 	signOut as signOutFormFirebase,
 	Auth,
 	onAuthStateChanged as onAuthStateChangedFirebase,
-	User
+	User,
+	browserPopupRedirectResolver,
+	signInWithEmailAndPassword,
+	createUserWithEmailAndPassword
 } from 'firebase/auth';
 import { IAuthProvider } from '../../interfaces/auth-provider.interface';
 import { KEYS } from '../../constant';
@@ -22,15 +25,20 @@ let auth!: Auth;
 const signinWithGoogle = async () => {
 	// Initialize Firebase Google Auth
 	const provider = new GoogleAuthProvider();
-	const credential = await signInWithPopup(auth, provider);
+	const credential = await signInWithPopup(
+		auth,
+		provider,
+		browserPopupRedirectResolver
+	);
 	return credential.user;
 };
 
 const sendLinkToEmail = async (email: string) => {
+	const url = `${window.location.origin}/?${KEYS.URL_QUERYPARAM_FINISH_SIGNUP}=true`;
 	const actionCodeSettings = {
 		// URL you want to redirect back to. The domain (www.example.com) for this
 		// URL must be in the authorized domains list in the Firebase Console.
-		url: 'http://localhost:5173/?finishSignUp=true',
+		url,
 		// This must be true.
 		handleCodeInApp: true
 		// dynamicLinkDomain: 'example.page.link'
@@ -77,12 +85,36 @@ const signInWithLink = async () => {
 	// You can check if the user is new or existing:
 	// result.additionalUserInfo.isNewUser
 	// Clear email from storage.
-	window.localStorage.removeItem('emailForSignIn');
+	window.localStorage.removeItem(KEYS.STORAGE_EMAIL_FOR_SIGNIN_KEY);
 	return credential;
 };
 
 const signInAsAnonymous = async () => {
 	return await signInAnonymously(auth);
+};
+
+const signInWithEmailPwd = async (email: string, password: string) => {
+	try {
+		// Create user with email and password
+		const credential = await createUserWithEmailAndPassword(
+			auth,
+			email,
+			password
+		);
+		return credential.user;
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	} catch (error: any) {
+		// only error with { code: string } type
+		if (error?.code === 'auth/email-already-in-use') {
+			const credential = await signInWithEmailAndPassword(
+				auth,
+				email,
+				password
+			);
+			return credential.user;
+		}
+		throw error;
+	}
 };
 
 const signOut = async () => {
@@ -106,6 +138,7 @@ const FirebaseAuthProvider: IAuthProvider = {
 	sendLinkToEmail,
 	signInWithLink,
 	signInAsAnonymous,
+	signInWithEmailPwd,
 	signOut,
 	getOnAuthStateChanged,
 	getCurrentUserAuth,
