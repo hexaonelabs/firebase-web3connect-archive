@@ -131,62 +131,6 @@ class EVMWallet extends Web3Wallet {
 		this.provider = provider;
 		this.chainId = chainId;
 	}
-
-	private async _sendToken(
-		destination: string,
-		decimalAmount: number,
-		contactAddress: string
-	) {
-		if (!this.privateKey) {
-			throw new Error('Private key is required to send token');
-		}
-
-		try {
-			const wallet = new Wallet(this.privateKey, this.provider);
-			// Check if the receiver address is the same as the token contract address
-			if (destination.toLowerCase() === contactAddress.toLowerCase()) {
-				// Sending tokens to the token contract address
-				throw new Error(
-					'Sending tokens to ERC20 contract address is not allowed.'
-				);
-			}
-			const amount = utils.parseUnits(decimalAmount.toString()); // Convert 1 ether to wei
-
-			let tx;
-			// Check if the token address is the same as the native ETH address
-			if (
-				contactAddress.toLowerCase() === constants.AddressZero.toLowerCase()
-			) {
-				console.log('[INFO] Sending native token');
-				tx = await wallet.sendTransaction({
-					to: destination,
-					value: amount
-				});
-			} else {
-				console.log('[INFO] Sending erc20 token');
-				// ABI (Application Binary Interface) of the ERC20 token contract
-				const tokenABI = [
-					// Standard ERC20 functions
-					'function balanceOf(address) view returns (uint)',
-					'function transfer(address to, uint amount) returns (boolean)'
-				];
-				const wallet = new Wallet(this.privateKey, this.provider);
-				// Load the ERC20 token contract
-				const tokenContract = new Contract(contactAddress, tokenABI, wallet);
-				// Convert amount to wei if necessary
-				// (depends on the token's decimal precision)
-				// Call the transfer function of the ERC20 token contract
-				tx = await tokenContract.transfer(destination, amount);
-			}
-			console.log('[INFO] Transaction Hash:', tx.hash);
-			const receipt = await tx.wait();
-			console.log('[INFO] Transaction confirmed');
-			return receipt;
-		} catch (error) {
-			console.error('[ERROR] _sendToken:', error);
-			throw error;
-		}
-	}
 }
 
 class ExternalEVMWallet extends Web3Wallet {
