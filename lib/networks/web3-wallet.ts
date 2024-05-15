@@ -16,7 +16,7 @@ export abstract class Web3Wallet {
 		return this._mnemonic;
 	}
 
-	abstract sendTransaction(tx: unknown): Promise<providers.TransactionResponse>;
+	abstract sendTransaction(tx: unknown): Promise<unknown>;
 	abstract signTransaction(tx: unknown): Promise<string>;
 	abstract signMessage(message: string): Promise<string>;
 	abstract verifySignature(message: string, signature: string): boolean;
