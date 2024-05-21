@@ -19,5 +19,5 @@ Firebase Web3connect supports the following blockchains:
 - ZkSync
 - Avalanche
 - Fantom
-- Bitcoin <Badge type="info" text="upcoming" />
-- Solana <Badge type="info" text="upcoming" />
+- Bitcoin <Badge type="info" text="partial support" />
+- Solana <Badge type="info" text="partial support" />
