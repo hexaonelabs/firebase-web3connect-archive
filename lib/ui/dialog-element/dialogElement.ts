@@ -1,6 +1,6 @@
 import html from './dialogElement.html?raw';
 import css from './dialogElement.css?raw';
-import { DEFAULT_SIGNIN_METHODS, SigninMethod } from '../../constant';
+import { DEFAULT_SIGNIN_METHODS, KEYS, SigninMethod } from '../../constant';
 import { promptPasswordElement } from '../prompt-password-element/prompt-password-element';
 import { promptEmailPasswordElement } from '../prompt-email-password-element/prompt-email-password-element';
 import { promptToDownloadElement } from '../prompt-download-element/prompt-download-element';
@@ -9,6 +9,7 @@ import { promptWalletTypeElement } from '../prompt-wallet-type-element/prompt-wa
 
 import { DialogUIOptions } from '../../interfaces/sdk.interface';
 import { FirebaseWeb3ConnectDialogElement } from '../../interfaces/dialog-element.interface';
+import { storageService } from '../../services/storage.service';
 
 // export webcomponent with shadowdom
 export class HexaSigninDialogElement
@@ -59,7 +60,7 @@ export class HexaSigninDialogElement
 		}
 	}
 
-	private async _render() {
+	private _render() {
 		// create template element
 		const template = document.createElement('template');
 		template.innerHTML = `
@@ -78,7 +79,8 @@ export class HexaSigninDialogElement
 			if (
 				!this.ops?.enabledSigninMethods?.includes(
 					button.id as unknown as SigninMethod
-				)
+				) &&
+				button.id.startsWith('connect')
 			) {
 				button.remove();
 			}
@@ -144,6 +146,11 @@ export class HexaSigninDialogElement
 					// as we don't want to show loading on cancel
 					// and we don't want to show connected on cancel.
 					// This will trigger the event and close the dialog
+					return;
+				}
+				// handle reset button
+				if (button.id === 'create-new-wallet') {
+					this.dispatchEvent(new CustomEvent('reset'));
 					return;
 				}
 				// only button from connection type request
@@ -423,5 +430,31 @@ export class HexaSigninDialogElement
 		(
 			this.shadowRoot?.querySelector('dialog .buttonsList') as HTMLElement
 		).style.display = 'block';
+	}
+
+	public async reset() {
+		const confirm = window.confirm(
+			`You are about to clear all data to create new Wallet. This will remove all your existing data and we will not be able to recover it if you don't have backup. You are confirming that you want to clear all data and create new Wallet?`
+		);
+		if (!confirm) {
+			return;
+		}
+		// reset html
+		if (this.shadowRoot?.innerHTML) this.shadowRoot.innerHTML = '';
+		this._ops = {
+			...this._ops,
+			enabledSigninMethods: DEFAULT_SIGNIN_METHODS
+		};
+		this._render();
+		// add event listener
+		this.connectedCallback();
+		// remove "Create new Wallet" button if no auth method is enabled
+		const authMethod = await storageService.getItem(
+			KEYS.STORAGE_AUTH_METHOD_KEY
+		);
+		if (!authMethod) {
+			this.shadowRoot?.querySelector('#create-new-wallet')?.remove();
+		}
+		this.showModal();
 	}
 }

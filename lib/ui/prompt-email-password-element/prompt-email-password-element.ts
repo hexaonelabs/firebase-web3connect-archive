@@ -1,3 +1,5 @@
+import { storageService } from '../../services/storage.service';
+
 const isValideInputs = (
 	inputPassword: HTMLInputElement,
 	inputEmail?: HTMLInputElement
@@ -16,6 +18,7 @@ export const promptEmailPasswordElement = async (
 }> => {
 	const minPasswordLength = 4;
 	const maxPasswordLength = 32;
+	const isCreating = !(await storageService.isExistingPrivateKeyStored());
 
 	return new Promise(resolve => {
 		const container = document.createElement('div');
@@ -50,20 +53,27 @@ export const promptEmailPasswordElement = async (
       }
       .prompt__message { 
         margin-bottom: 1.5rem;
-      }
+      }			
+      .prompt__message h4 {
+				margin: 0 auto -0.7rem;
+				font-size: 1.3em;
+			}
       .prompt__button {
         margin-top: 1rem;
       }
 
     </style>
     <div class="prompt__message">
-      <p><b>
-        Protect your wallet with a password
-      </b></p>
+      ${isCreating ? '<h4>Create a new Wallet</h4>' : '<h4>Connect you Wallet</h4>'}
+      <p><b>${
+				isCreating ? 'Protect your Wallet with a password' : 'Welcome back!'
+			}</b></p>
       <p>
-        The password you enter encrypts your private key and gives access to your funds. 
-        Please store your password in a safe place. 
-        We don’t keep your information and can’t restore it.
+        ${
+					isCreating
+						? `The password you enter encrypts your private key and gives access to your funds. Please store your password in a safe place. We don’t keep your information and can’t restore it.`
+						: `Unlock Wallet with email & password.`
+				}
       </p>
     </div>
     <input 

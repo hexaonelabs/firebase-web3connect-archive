@@ -63,14 +63,19 @@ export const promptPasswordElement = async (
       .prompt__message { 
         margin-bottom: 1.5rem;
       }
+			.prompt__message h4 {
+				margin: 0 auto -0.7rem;
+				font-size: 1.3em;
+			}
       .prompt__button {
         margin-top: 1rem;
       }
 
     </style>
       <div class="prompt__message">
+				${isCreating ? '<h4>Create a new Wallet</h4>' : '<h4>Connect you Wallet</h4>'}
         <p><b>${
-					isCreating ? 'Protect your wallet with a password' : 'Welcome back!'
+					isCreating ? 'Protect your Wallet with a password' : 'Welcome back!'
 				}</b></p>
         <p>
           ${

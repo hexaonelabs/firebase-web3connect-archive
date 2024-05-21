@@ -3,16 +3,16 @@ import { firebaseWeb3Connect } from './firebase-web3connect.service';
 
 export function setupAccountTab(
 	element: HTMLDivElement,
-	{ userInfo, signout }: typeof firebaseWeb3Connect
+	web3Wallet: typeof firebaseWeb3Connect
 ) {
 	// let signature!: string;
 	element.innerHTML = `
     <h1>Connected</h1>
-    <p id="address">${userInfo?.address}</p>
+    <p id="address">${web3Wallet?.userInfo?.address}</p>
     <button id="signout">signout</button><br/>
 
 		<h2>Switch Network</h2>
-		<p>Current chain: <span id="currentChain">${userInfo?.chainId} ${NETWORK[Number(userInfo?.chainId)]}</span></p>
+		<p>Current chain: <span id="currentChain">${web3Wallet?.userInfo?.chainId} ${NETWORK[Number(web3Wallet?.userInfo?.chainId)]}</span></p>
 		<div id="switchNetwork">
 			<button id="btc">btc</button>
 			<button id="eth">eth</button>
@@ -63,7 +63,7 @@ export function setupAccountTab(
 	});
 
 	element.querySelector('#signout')?.addEventListener('click', async () => {
-		await signout();
+		await web3Wallet.signout();
 	});
 	element
 		.querySelector('#switchNetwork')

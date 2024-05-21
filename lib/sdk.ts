@@ -97,7 +97,7 @@ export class FirebaseWeb3Connect {
 			KEYS.STORAGE_AUTH_METHOD_KEY
 		)) as SigninMethod | null;
 		// build UI
-		const dialogElement = setupSigninDialogElement(document.body, {
+		const dialogElement = await setupSigninDialogElement(document.body, {
 			isLightMode,
 			enabledSigninMethods:
 				authMethod && authMethod !== SigninMethod.Wallet
@@ -174,7 +174,34 @@ export class FirebaseWeb3Connect {
 		return this.userInfo;
 	}
 
-	public async signout() {
+	public async signout(withUI?: boolean) {
+		// display dialog to backup seed if withUI is true
+		if (withUI) {
+			const dialogElement = await setupSigninDialogElement(document.body, {
+				isLightMode: true,
+				enabledSigninMethods: [SigninMethod.Wallet],
+				integrator: this._ops?.dialogUI?.integrator,
+				logoUrl: this._ops?.dialogUI?.logoUrl
+			});
+			// remove all button
+			// hide buttons
+			const btnsElement = dialogElement.shadowRoot?.querySelector(
+				'dialog .buttonsList'
+			) as HTMLElement;
+			btnsElement.style.display = 'none';
+			addAndWaitUIEventsResult(dialogElement);
+			// display modal
+			dialogElement.showModal();
+			const { withEncryption, skip: reSkip } =
+				await dialogElement.promptBackup();
+			if (!reSkip) {
+				await storageService.executeBackup(
+					Boolean(withEncryption),
+					this._secret
+				);
+			}
+			await dialogElement.hideModal();
+		}
 		await storageService.removeItem(KEYS.STORAGE_SECRET_KEY);
 		await authProvider.signOut();
 	}
@@ -277,11 +304,17 @@ export class FirebaseWeb3Connect {
 		}
 		// handle local wallet
 		try {
-			const wallets = await Promise.all([
-				initWallet(user, this._secret, defaultNetworkId),
-				initWallet(user, this._secret, NETWORK.bitcoin),
-				initWallet(user, this._secret, NETWORK.solana)
-			]);
+			const wallets: Web3Wallet[] = [];
+			await initWallet(user, this._secret, defaultNetworkId).then(wallet =>
+				wallets.push(wallet)
+			);
+			await initWallet(user, this._secret, NETWORK.bitcoin).then(wallet =>
+				wallets.push(wallet)
+			);
+			await initWallet(user, this._secret, NETWORK.solana).then(wallet =>
+				wallets.push(wallet)
+			);
+			// set wallets values with the generated wallet
 			this._wallets = wallets;
 			await this._setWallet(
 				wallets.find(wallet => wallet.chainId === defaultNetworkId)

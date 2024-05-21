@@ -6,6 +6,7 @@ import { CHAIN_AVAILABLES, KEYS } from '../constant';
 import { storageService } from './storage.service';
 import { Web3Wallet } from '../networks/web3-wallet';
 import solanaWallet from '../networks/solana';
+import { generateMnemonic } from 'bip39';
 
 export const initWallet = async (
 	user: {
@@ -53,11 +54,11 @@ export const initWallet = async (
 	);
 	const mnemonic = storedEncryptedMnemonic
 		? await Crypto.decrypt(secret, storedEncryptedMnemonic)
-		: undefined;
+		: generateMnemonic();
 	let wallet!: Web3Wallet;
 	// check if is EVM chain
 	const chain = CHAIN_AVAILABLES.find(chain => chain.id === chainId);
-
+	console.log('>>>>>', { storedEncryptedMnemonic, mnemonic });
 	// generate wallet from encrypted mnemonic or generate new from random mnemonic
 	switch (true) {
 		// evm wallet
