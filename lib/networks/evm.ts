@@ -4,7 +4,6 @@ import { generateMnemonic, validateMnemonic } from 'bip39';
 import { IWalletProvider } from '../interfaces/walllet-provider.interface';
 import { Web3Wallet } from './web3-wallet';
 // import cryptoRandomString from 'crypto-random-string';
-
 // const generatePrivateKey = () => {
 // 	// Générer une clé privée aléatoire de 32 octets
 // 	return cryptoRandomString({ length: 64, type: 'hex' });
@@ -20,14 +19,16 @@ class EVMWallet extends Web3Wallet {
 	public chainId: number;
 
 	constructor(mnemonic: string, provider: providers.JsonRpcProvider) {
-		super(mnemonic);
-		if (!this._mnemonic) {
+		super();
+		if (!mnemonic) {
 			throw new Error('Mnemonic is required to generate wallet');
 		}
-		const wallet = Wallet.fromMnemonic(this._mnemonic);
+		const _w = Wallet.fromMnemonic(mnemonic);
+		const _wallet = new Wallet(_w.privateKey, provider);
+		const wallet = _wallet.connect(provider);
 		this.address = wallet.address;
 		this.publicKey = wallet.publicKey;
-		this.privateKey = wallet.privateKey;
+		this._privateKey = wallet.privateKey;
 		this.did = generateDID(this.address);
 		this.provider = provider;
 		this.chainId = provider.network.chainId;
@@ -38,7 +39,7 @@ class EVMWallet extends Web3Wallet {
 		value: string;
 		contractAddress: string;
 	}): Promise<providers.TransactionResponse> {
-		if (!this.privateKey) {
+		if (!this._privateKey) {
 			throw new Error('Private key is required to send token');
 		}
 		const {
@@ -47,7 +48,7 @@ class EVMWallet extends Web3Wallet {
 			contractAddress = constants.AddressZero
 		} = tx;
 		try {
-			const wallet = new Wallet(this.privateKey, this.provider);
+			const wallet = new Wallet(this._privateKey, this.provider);
 			// Check if the receiver address is the same as the token contract address
 			if (destination.toLowerCase() === contractAddress.toLowerCase()) {
 				// Sending tokens to the token contract address
@@ -75,7 +76,7 @@ class EVMWallet extends Web3Wallet {
 					'function balanceOf(address) view returns (uint)',
 					'function transfer(address to, uint amount) returns (boolean)'
 				];
-				const wallet = new Wallet(this.privateKey, this.provider);
+				const wallet = new Wallet(this._privateKey, this.provider);
 				// Load the ERC20 token contract
 				const tokenContract = new Contract(contractAddress, tokenABI, wallet);
 				// Convert amount to wei if necessary
@@ -94,18 +95,18 @@ class EVMWallet extends Web3Wallet {
 	}
 
 	signMessage(message: string): Promise<string> {
-		if (!this.privateKey) {
+		if (!this._privateKey) {
 			throw new Error('Private key is required to sign message');
 		}
-		const wallet = new Wallet(this.privateKey, this.provider);
+		const wallet = new Wallet(this._privateKey, this.provider);
 		return wallet.signMessage(message);
 	}
 
 	signTransaction(message: providers.TransactionRequest): Promise<string> {
-		if (!this.privateKey) {
+		if (!this._privateKey) {
 			throw new Error('Private key is required to sign transaction');
 		}
-		const wallet = new Wallet(this.privateKey, this.provider);
+		const wallet = new Wallet(this._privateKey, this.provider);
 		return wallet.signTransaction(message);
 	}
 
@@ -143,7 +144,7 @@ class ExternalEVMWallet extends Web3Wallet {
 		public chainId: number,
 		fromInitializer: boolean = false
 	) {
-		super('');
+		super();
 		if (!fromInitializer) {
 			throw new Error('Use create method to initialize ExternalEVMWallet');
 		}
