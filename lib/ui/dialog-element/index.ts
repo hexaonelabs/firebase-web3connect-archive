@@ -11,7 +11,7 @@ import {
 import { promptImportPrivatekeyElement } from '../prompt-import-privatekey-element/prompt-import-privatekey-element';
 import { storageService } from '../../services/storage.service';
 
-const setupSigninDialogElement = (
+const setupSigninDialogElement = async (
 	ref: HTMLElement = document.body,
 	ops: DialogUIOptions
 ) => {
@@ -29,6 +29,11 @@ const setupSigninDialogElement = (
 	// add `ops` as property
 	dialogElement.ops = ops;
 	ref.appendChild(dialogElement);
+	// remove "Create new Wallet" button if no auth method is enabled
+	const authMethod = await storageService.getItem(KEYS.STORAGE_AUTH_METHOD_KEY);
+	if (!authMethod) {
+		dialogElement.shadowRoot?.querySelector('#create-new-wallet')?.remove();
+	}
 	return dialogElement;
 };
 
@@ -200,6 +205,10 @@ const addAndWaitUIEventsResult = (
 						reject(new Error(`Error while connecting: ${message}`));
 					}
 				}
+			});
+			dialogElement.addEventListener('reset', async () => {
+				await storageService.clear();
+				dialogElement.reset();
 			});
 		}
 	);

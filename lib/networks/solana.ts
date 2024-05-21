@@ -20,11 +20,11 @@ class SolanaWallet extends Web3Wallet {
 	public chainId: number = NETWORK.solana;
 
 	constructor(mnemonic: string, derivationPath: string = "m/44'/501'/0'/0'") {
-		super(mnemonic);
-		if (!this._mnemonic) {
+		super();
+		if (!mnemonic) {
 			throw new Error('Mnemonic is required to generate wallet');
 		}
-		const seed = mnemonicToSeedSync(this._mnemonic);
+		const seed = mnemonicToSeedSync(mnemonic);
 		const path = derivationPath;
 		const derivedSeed = derivePath(path, seed as unknown as string).key;
 		// generate key pair
@@ -42,7 +42,7 @@ class SolanaWallet extends Web3Wallet {
 		// set wallet properties
 		this.address = address;
 		this.publicKey = publicKey.toString();
-		this.privateKey = privateKey;
+		this._privateKey = privateKey;
 	}
 
 	async sendTransaction(tx: {
@@ -51,7 +51,7 @@ class SolanaWallet extends Web3Wallet {
 		tokenAddress?: string;
 	}): Promise<solanaWeb3.TransactionResponse> {
 		console.log('sendTransaction', tx);
-		if (!this.privateKey) {
+		if (!this._privateKey) {
 			throw new Error('Private key is required to send transaction');
 		}
 		const connection = this._getConnection(this._rpcUrl);
@@ -60,12 +60,12 @@ class SolanaWallet extends Web3Wallet {
 		let secretKey;
 		let signature;
 
-		if (this.privateKey.split(',').length > 1) {
+		if (this._privateKey.split(',').length > 1) {
 			secretKey = new Uint8Array(
-				this.privateKey.split(',') as Iterable<number>
+				this._privateKey.split(',') as Iterable<number>
 			);
 		} else {
-			secretKey = bs58.decode(this.privateKey);
+			secretKey = bs58.decode(this._privateKey);
 		}
 
 		const from = solanaWeb3.Keypair.fromSecretKey(secretKey, {

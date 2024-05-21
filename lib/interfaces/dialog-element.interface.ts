@@ -9,6 +9,11 @@ export type FirebaseWeb3ConnectDialogElement = HTMLElement & {
 	ops: DialogUIOptions | undefined;
 
 	/**
+	 * Method that reset the dialog element
+	 */
+	reset(): void;
+
+	/**
 	 * Method that display the dialog element to the user
 	 */
 	showModal(): void;

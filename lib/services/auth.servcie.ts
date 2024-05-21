@@ -73,7 +73,32 @@ export const authWithEmailPwd = async (ops: {
 	await storageService.setItem(KEYS.STORAGE_SECRET_KEY, encryptedSecret);
 
 	// Now we can connect with Google
-	return await authProvider.signInWithEmailPwd(ops.email, ops.password);
+	const result = await authProvider
+		.signInWithEmailPwd(ops.email, ops.password)
+		.catch(error => {
+			// clean storage if error on creation step
+			const { code = '', message = '' } = error;
+			switch (true) {
+				case code === 'auth/email-already-in-use':
+				case code === 'auth/weak-password':
+				case code === 'auth/invalid-email': {
+					console.error(`[ERROR] Signin Step: ${code}: ${message}`);
+					storageService.clear();
+					localStorage.removeItem(KEYS.STORAGE_BACKUP_KEY);
+					break;
+				}
+				case code === 'auth/invalid-credential': {
+					console.error(`[ERROR] Signin Step: ${code}: ${message}`);
+					storageService.clear();
+					localStorage.removeItem(KEYS.STORAGE_BACKUP_KEY);
+					throw new Error(
+						`This email is already used and connected to other device. Import your private key instead using: "Connect Wallet -> Import Wallet".`
+					);
+				}
+			}
+			throw error;
+		});
+	return result;
 };
 
 export const authWithExternalWallet = async (

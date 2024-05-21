@@ -12,18 +12,19 @@ const generateDID = (address: string) => {
 
 class BTCWallet extends Web3Wallet {
 	public chainId: number;
+	private _mnemonic!: string;
 
 	constructor(
 		mnemonic: string,
 		network: bitcoin.Network = bitcoin.networks.bitcoin,
 		derivationPath: string = "m/44'/0'/0'/0/0"
 	) {
-		super(mnemonic);
-		if (!this._mnemonic) {
+		super();
+		if (!mnemonic) {
 			throw new Error('Mnemonic is required to generate wallet');
 		}
 		const bip32 = BIP32Factory(ecc);
-		const seed = mnemonicToSeedSync(this._mnemonic);
+		const seed = mnemonicToSeedSync(mnemonic);
 		const path = derivationPath;
 		// generate key pair
 		const { privateKey, publicKey } = bip32.fromSeed(seed).derivePath(path);
@@ -42,8 +43,9 @@ class BTCWallet extends Web3Wallet {
 		// set wallet properties
 		this.address = address;
 		this.publicKey = publicKey.toString('hex');
-		this.privateKey = privateKey.toString('hex');
+		this._privateKey = privateKey.toString('hex');
 		this.chainId = network.wif;
+		this._mnemonic = mnemonic;
 	}
 
 	sendTransaction(tx: unknown): Promise<TransactionResponse> {

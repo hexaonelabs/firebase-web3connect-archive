@@ -9,6 +9,6 @@ feature request as a new Issue.
 For help and questions about using this project, please use GitHub Issues and tag them with the
 **question** label.
 
-## Hexa One Labs Support Policy
+## HexaOne Labs Support Policy
 
 Support for this **PROJECT or PRODUCT** is limited to the resources listed above.
