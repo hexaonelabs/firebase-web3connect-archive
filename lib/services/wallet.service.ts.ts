@@ -89,12 +89,12 @@ export const initWallet = async (
 		await authProvider.signOut();
 		throw new Error('Secret is required to encrypt the mnemonic.');
 	}
-	if (!wallet.privateKey) {
+	if (!wallet.publicKey) {
 		throw new Error('Failed to generate wallet from mnemonic');
 	}
 	// encrypt mnemonic before storing it
-	if (wallet.mnemonic) {
-		const encryptedMnemonic = await Crypto.encrypt(secret, wallet.mnemonic);
+	if (mnemonic) {
+		const encryptedMnemonic = await Crypto.encrypt(secret, mnemonic);
 		await storageService.setItem(
 			KEYS.STORAGE_PRIVATEKEY_KEY,
 			encryptedMnemonic
