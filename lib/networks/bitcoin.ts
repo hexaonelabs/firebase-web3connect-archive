@@ -1,7 +1,7 @@
 import { generateMnemonic, mnemonicToSeedSync } from 'bip39';
 import { BIP32Factory } from 'bip32';
 import * as bitcoin from 'bitcoinjs-lib';
-import * as ecc from 'tiny-secp256k1';
+import ecc from '@bitcoinerlab/secp256k1';
 import { Web3Wallet } from './web3-wallet';
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import { IWalletProvider } from '../interfaces/walllet-provider.interface';
