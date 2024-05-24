@@ -1,7 +1,7 @@
 {
   "name": "@hexaonelabs/firebase-web3connect",
   "private": false,
-  "version": "0.0.3",
+  "version": "0.0.4",
   "type": "module",
   "types": "dist/index.d.ts",
   "main": "./dist/index.cjs",
@@ -69,6 +69,7 @@
     "vitepress": "^1.1.0"
   },
   "dependencies": {
+    "@bitcoinerlab/secp256k1": "^1.1.1",
     "@fleekxyz/sdk": "^0.7.3",
     "@solana/spl-token": "^0.4.6",
     "@solana/web3.js": "^1.91.8",
@@ -84,7 +85,6 @@
     "ethers": "^5.7.2",
     "firebase": "^10.10.0",
     "stream-browserify": "^3.0.0",
-    "tiny-secp256k1": "^2.2.3",
     "vite-plugin-node-polyfills": "^0.21.0"
   },
   "peerDependencies": {

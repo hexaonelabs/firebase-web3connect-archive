@@ -39,7 +39,7 @@ export default defineConfig({
 		manifest: false,
 		minify: true,
 		lib: {
-			formats: ['es'],
+			// formats: ['es'],
 			entry: resolve(__dirname, 'lib/index.ts'),
 			// formats: ['es'],
 			name: 'firebase-web3connect',
