@@ -1,7 +1,7 @@
 import { passwordValidationOrSignature } from '../providers/crypto/password';
 import authProvider from '../providers/auth/firebase';
 import Crypto from '../providers/crypto/crypto';
-import { CHAIN_DEFAULT, KEYS } from '../constant';
+import { KEYS } from '../constant';
 import { storageService } from './storage.service';
 
 export const authWithGoogle = async (ops: {
@@ -101,10 +101,8 @@ export const authWithEmailPwd = async (ops: {
 	return result;
 };
 
-export const authWithExternalWallet = async (
-	networkId: number = CHAIN_DEFAULT.id
-) => {
-	console.log('authWithExternalWallet:', { networkId });
+export const authWithExternalWallet = async () => {
+	console.log('authWithExternalWallet');
 	const {
 		user: { uid }
 	} = await authProvider.signInAsAnonymous();
