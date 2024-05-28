@@ -1,5 +1,14 @@
 import { generateMnemonic, mnemonicToSeedSync } from 'bip39';
-import * as solanaWeb3 from '@solana/web3.js';
+import {
+	Connection,
+	Keypair,
+	LAMPORTS_PER_SOL,
+	PublicKey,
+	SystemProgram,
+	Transaction,
+	TransactionResponse,
+	sendAndConfirmTransaction
+} from '@solana/web3.js';
 import {
 	getOrCreateAssociatedTokenAccount,
 	transfer as transferToken,
@@ -28,7 +37,7 @@ class SolanaWallet extends Web3Wallet {
 		const path = derivationPath;
 		const derivedSeed = derivePath(path, seed as unknown as string).key;
 		// generate key pair
-		const { publicKey, secretKey } = solanaWeb3.Keypair.fromSeed(derivedSeed);
+		const { publicKey, secretKey } = Keypair.fromSeed(derivedSeed);
 		const privateKey = bs58.encode(secretKey);
 		if (!privateKey || !publicKey) {
 			throw new Error('Failed to generate key pair');
@@ -49,14 +58,14 @@ class SolanaWallet extends Web3Wallet {
 		recipientAddress: string;
 		amount: number;
 		tokenAddress?: string;
-	}): Promise<solanaWeb3.TransactionResponse> {
+	}): Promise<TransactionResponse> {
 		console.log('sendTransaction', tx);
 		if (!this._privateKey) {
 			throw new Error('Private key is required to send transaction');
 		}
 		const connection = this._getConnection(this._rpcUrl);
 
-		const recipient = new solanaWeb3.PublicKey(tx.recipientAddress);
+		const recipient = new PublicKey(tx.recipientAddress);
 		let secretKey;
 		let signature;
 
@@ -68,16 +77,13 @@ class SolanaWallet extends Web3Wallet {
 			secretKey = bs58.decode(this._privateKey);
 		}
 
-		const from = solanaWeb3.Keypair.fromSecretKey(secretKey, {
+		const from = Keypair.fromSecretKey(secretKey, {
 			skipValidation: true
 		});
 
 		if (tx.tokenAddress) {
 			// Get token mint
-			const mint = await getMint(
-				connection,
-				new solanaWeb3.PublicKey(tx.tokenAddress)
-			);
+			const mint = await getMint(connection, new PublicKey(tx.tokenAddress));
 
 			// Get the token account of the from address, and if it does not exist, create it
 			const fromTokenAccount = await getOrCreateAssociatedTokenAccount(
@@ -101,23 +107,21 @@ class SolanaWallet extends Web3Wallet {
 				fromTokenAccount.address,
 				recipientTokenAccount.address,
 				from.publicKey,
-				solanaWeb3.LAMPORTS_PER_SOL * tx.amount
+				LAMPORTS_PER_SOL * tx.amount
 			);
 		} else {
-			const transaction = new solanaWeb3.Transaction().add(
-				solanaWeb3.SystemProgram.transfer({
+			const transaction = new Transaction().add(
+				SystemProgram.transfer({
 					fromPubkey: from.publicKey,
 					toPubkey: recipient,
-					lamports: solanaWeb3.LAMPORTS_PER_SOL * tx.amount
+					lamports: LAMPORTS_PER_SOL * tx.amount
 				})
 			);
 
 			// Sign transaction, broadcast, and confirm
-			signature = await solanaWeb3.sendAndConfirmTransaction(
-				connection,
-				transaction,
-				[from]
-			);
+			signature = await sendAndConfirmTransaction(connection, transaction, [
+				from
+			]);
 		}
 
 		const txRecipe = await connection.getTransaction(signature);
@@ -152,14 +156,18 @@ class SolanaWallet extends Web3Wallet {
 		throw new Error('Method not implemented.');
 	}
 
-	private _getConnection = (rpcUrl?: string) => {
+	async getSigner<Connection>(): Promise<Connection> {
+		return this._getConnection(this._rpcUrl) as Connection;
+	}
+
+	private _getConnection = (rpcUrl?: string): Connection => {
 		const connection = this._provider(rpcUrl);
 
 		return connection;
 	};
 
 	private _provider(rpcUrl?: string) {
-		return new solanaWeb3.Connection(rpcUrl as string);
+		return new Connection(rpcUrl as string);
 	}
 }
 
