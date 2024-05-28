@@ -195,7 +195,7 @@ export class HexaSigninDialogElement
 			});
 	}
 
-	public async toggleSpinnerAsCheck(): Promise<boolean> {
+	public async toggleSpinnerAsCheck(message?: string): Promise<boolean> {
 		await new Promise(resolve => {
 			const t = setTimeout(() => {
 				clearTimeout(t);
@@ -313,6 +313,7 @@ export class HexaSigninDialogElement
           />
       </g>
     </svg>
+		${message ? `<p>${message}</p>` : ''}
     `;
 		return new Promise(resolve => {
 			const t = setTimeout(() => {

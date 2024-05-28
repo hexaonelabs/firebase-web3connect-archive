@@ -26,7 +26,7 @@ export type FirebaseWeb3ConnectDialogElement = HTMLElement & {
 	/**
 	 * Method that remove a spinner and display a check icon to the user
 	 */
-	toggleSpinnerAsCheck(): Promise<boolean>;
+	toggleSpinnerAsCheck(message?: string): Promise<boolean>;
 
 	/**
 	 * Method that remove spinner and display a cross icon

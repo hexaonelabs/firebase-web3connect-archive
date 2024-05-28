@@ -132,11 +132,11 @@ export class FirebaseWeb3Connect {
 				return this.userInfo;
 			}
 			this._secret = password;
-			// init wallet to set user info
-			await this._initWallets({
-				isAnonymous,
-				uid
-			});
+			// // init wallet to set user info
+			// await this._initWallets({
+			// 	isAnonymous,
+			// 	uid
+			// });
 		} catch (error: unknown) {
 			const message =
 				(error as Error)?.message || 'An error occured while connecting';
@@ -255,6 +255,11 @@ export class FirebaseWeb3Connect {
 	 */
 	public onConnectStateChanged(cb: (user: { address: string } | null) => void) {
 		return authProvider.getOnAuthStateChanged(async user => {
+			if (user?.uid && !user?.emailVerified && !user?.isAnonymous) {
+				console.log('[INFO] onConnectStateChanged:', user);
+				await this._displayVerifyEMailModal();
+				return;
+			}
 			this._uid = user?.uid;
 
 			if (!this.userInfo && user) {
@@ -413,5 +418,41 @@ export class FirebaseWeb3Connect {
 
 	private async _setWallet(wallet?: Web3Wallet) {
 		this._wallet = wallet;
+	}
+
+	private async _displayVerifyEMailModal() {
+		const dialogElement = await setupSigninDialogElement(document.body, {
+			isLightMode: true,
+			enabledSigninMethods: [SigninMethod.Wallet],
+			integrator: this._ops?.dialogUI?.integrator,
+			logoUrl: this._ops?.dialogUI?.logoUrl
+		});
+		// hide all btns
+		const btnsElement = dialogElement.shadowRoot?.querySelector(
+			'dialog .buttonsList'
+		) as HTMLElement;
+		btnsElement.remove();
+		// add HTML to explain the user to verify email
+		const verifyElement = document.createElement('div');
+		verifyElement.innerHTML = `
+			<p>
+				Please verify your email before connecting with your wallet.
+				<br />
+				Click the link in the email we sent you to verify your email address.
+			</p>
+			<button id="button__ok">OK</button>
+		`;
+		dialogElement.shadowRoot
+			?.querySelector('dialog #spinner')
+			?.after(verifyElement);
+		dialogElement.showModal();
+		// add event listener to close modal
+		const buttonOk = dialogElement.shadowRoot?.querySelector(
+			'#button__ok'
+		) as HTMLButtonElement;
+		buttonOk.addEventListener('click', () => {
+			dialogElement.hideModal();
+			window.location.reload();
+		});
 	}
 }
