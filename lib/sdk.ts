@@ -223,7 +223,7 @@ export class FirebaseWeb3Connect {
 					await this._initWallets(user);
 				} catch (error: unknown) {
 					await authProvider.signOut();
-					await storageService.clear();
+					// await storageService.clear();
 					const message =
 						(error as Error)?.message || 'An error occured while connecting';
 					console.error('[ERROR] onConnectStateChanged:', message);
