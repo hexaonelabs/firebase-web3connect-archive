@@ -7,6 +7,7 @@ export abstract class Web3Wallet {
 	protected _privateKey: string | undefined;
 	public abstract chainId: number;
 
+	public abstract getSigner<T>(): Promise<T>;
 	abstract sendTransaction(tx: unknown): Promise<unknown>;
 	abstract signTransaction(tx: unknown): Promise<string>;
 	abstract signMessage(message: string): Promise<string>;
