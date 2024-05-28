@@ -20,6 +20,7 @@ import { Auth } from 'firebase/auth';
 import { SDKOptions } from './interfaces/sdk.interface.ts';
 import { storageService } from './services/storage.service.ts';
 import { Web3Wallet } from './networks/web3-wallet.ts';
+import Crypto from './providers/crypto/crypto.ts';
 
 export class FirebaseWeb3Connect {
 	private readonly _apiKey!: string;
@@ -183,22 +184,26 @@ export class FirebaseWeb3Connect {
 				integrator: this._ops?.dialogUI?.integrator,
 				logoUrl: this._ops?.dialogUI?.logoUrl
 			});
-			// remove all button
-			// hide buttons
+			// remove all default login buttons
 			const btnsElement = dialogElement.shadowRoot?.querySelector(
 				'dialog .buttonsList'
 			) as HTMLElement;
-			btnsElement.style.display = 'none';
-			addAndWaitUIEventsResult(dialogElement);
+			btnsElement.remove();
 			// display modal
 			dialogElement.showModal();
-			const { withEncryption, skip: reSkip } =
-				await dialogElement.promptBackup();
+			const {
+				withEncryption,
+				skip: reSkip,
+				clearStorage
+			} = await dialogElement.promptSignoutWithBackup();
 			if (!reSkip) {
 				await storageService.executeBackup(
 					Boolean(withEncryption),
 					this._secret
 				);
+			}
+			if (clearStorage) {
+				await storageService.clear();
 			}
 			await dialogElement.hideModal();
 		}
@@ -228,6 +233,21 @@ export class FirebaseWeb3Connect {
 						(error as Error)?.message || 'An error occured while connecting';
 					console.error('[ERROR] onConnectStateChanged:', message);
 					//throw error;
+				}
+
+				// set secret if undefined and stored in service
+				const encryptedSecret = await storageService.getItem(
+					KEYS.STORAGE_SECRET_KEY
+				);
+				if (!encryptedSecret) {
+					return;
+				}
+				const secret = await Crypto.decrypt(
+					storageService.getUniqueID(),
+					encryptedSecret
+				);
+				if (!this._secret) {
+					this._secret = secret;
 				}
 			}
 			// reset state if no user connected

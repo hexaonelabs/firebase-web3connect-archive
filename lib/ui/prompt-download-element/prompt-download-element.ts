@@ -22,10 +22,13 @@ export const promptToDownloadElement = async (
       </p>
       <p>
         Download your backup file. We don't keep any copies of your private key, so make sure to keep it safe! 
-        It's the only way to recover your wallet if you lose your device.
+        It's the only way to recover your wallet.
       </p>
 
-      ${CheckboxElement()}
+      ${CheckboxElement({
+				label: 'Encrypt backup file',
+				id: 'toggle__encription'
+			})}
 
       <button id="button__download">Download backup file</button>
       

@@ -19,7 +19,10 @@ export const promptImportPrivatekeyElement = async (
 				& Authenticate with Google to continue
       </p>
       <div class="prompt__import_file__result"></div>
-      ${CheckboxElement('Encrypted backup file')}
+      ${CheckboxElement({
+				label: 'Encrypted backup file',
+				id: 'toggle__encription'
+			})}
       <button id="button__import_privatekey">
         <span>Import</span>
       </button>

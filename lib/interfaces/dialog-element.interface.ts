@@ -57,6 +57,16 @@ export type FirebaseWeb3ConnectDialogElement = HTMLElement & {
 	}>;
 
 	/**
+	 * Method that display prompt to user before signout
+	 * to request backup of wallet seed phrase
+	 */
+	promptSignoutWithBackup(): Promise<{
+		withEncryption?: boolean | undefined;
+		skip?: boolean | undefined;
+		clearStorage?: boolean;
+	}>;
+
+	/**
 	 * Methods that display a prompt to the user to select the wallet type
 	 * that they want to connect with.
 	 * This method returns the user's response as a string.

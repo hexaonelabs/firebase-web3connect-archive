@@ -63,7 +63,7 @@ export function setupAccountTab(
 	});
 
 	element.querySelector('#signout')?.addEventListener('click', async () => {
-		await web3Wallet.signout();
+		await web3Wallet.signout(true);
 	});
 	element
 		.querySelector('#switchNetwork')

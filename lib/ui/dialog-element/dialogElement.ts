@@ -10,6 +10,7 @@ import { promptWalletTypeElement } from '../prompt-wallet-type-element/prompt-wa
 import { DialogUIOptions } from '../../interfaces/sdk.interface';
 import { FirebaseWeb3ConnectDialogElement } from '../../interfaces/dialog-element.interface';
 import { storageService } from '../../services/storage.service';
+import { promptSignoutElement } from '../prompt-signout-element/prompt-signout-element';
 
 // export webcomponent with shadowdom
 export class HexaSigninDialogElement
@@ -411,6 +412,13 @@ export class HexaSigninDialogElement
 
 	public async promptBackup() {
 		const value = await promptToDownloadElement(
+			this.shadowRoot?.querySelector('dialog #spinner') as HTMLElement
+		);
+		return value;
+	}
+
+	public async promptSignoutWithBackup() {
+		const value = await promptSignoutElement(
 			this.shadowRoot?.querySelector('dialog #spinner') as HTMLElement
 		);
 		return value;
