@@ -1,7 +1,25 @@
 {
   "name": "@hexaonelabs/firebase-web3connect",
+  "description": "Firebase Web3Connect",
+  "keywords": [
+    "blockchain",
+    "web3",
+    "firebase",
+    "wallet",
+    "API",
+    "ethereum",
+    "EVM",
+    "solana",
+    "bitcoin"
+  ],
   "private": false,
-  "version": "0.0.4",
+  "version": "0.0.5",
+  "homepage": "https://web3connect.web.app",
+  "repository": "github:hexaonelabs/firebase-web3connect",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
   "type": "module",
   "types": "dist/index.d.ts",
   "main": "./dist/index.cjs",
