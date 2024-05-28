@@ -177,7 +177,8 @@ export class FirebaseWeb3Connect {
 
 	public async signout(withUI?: boolean) {
 		// display dialog to backup seed if withUI is true
-		if (withUI) {
+		const isExternalWallet = !this.wallet?.publicKey;
+		if (withUI && !isExternalWallet) {
 			const dialogElement = await setupSigninDialogElement(document.body, {
 				isLightMode: true,
 				enabledSigninMethods: [SigninMethod.Wallet],
@@ -272,15 +273,14 @@ export class FirebaseWeb3Connect {
 				const encryptedSecret = await storageService.getItem(
 					KEYS.STORAGE_SECRET_KEY
 				);
-				if (!encryptedSecret) {
-					return;
-				}
-				const secret = await Crypto.decrypt(
-					storageService.getUniqueID(),
-					encryptedSecret
-				);
-				if (!this._secret) {
-					this._secret = secret;
+				if (encryptedSecret) {
+					const secret = await Crypto.decrypt(
+						storageService.getUniqueID(),
+						encryptedSecret
+					);
+					if (!this._secret) {
+						this._secret = secret;
+					}
 				}
 			}
 			// reset state if no user connected
