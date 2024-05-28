@@ -34,6 +34,22 @@ class EVMWallet extends Web3Wallet {
 		this.chainId = provider.network.chainId;
 	}
 
+	async switchNetwork(chainId: number): Promise<void> {
+		if (this.chainId === chainId) {
+			return;
+		}
+		const chain = CHAIN_AVAILABLES.find(c => c.id === chainId);
+		if (!chain) {
+			throw new Error('Chain not available');
+		}
+		if (!this.provider) {
+			throw new Error('Provider not available');
+		}
+		const provider = new providers.JsonRpcProvider(chain.rpcUrl, chain.id);
+		this.provider = provider;
+		this.chainId = chainId;
+	}
+
 	async sendTransaction(tx: {
 		to: string;
 		value: string;
@@ -94,7 +110,7 @@ class EVMWallet extends Web3Wallet {
 		}
 	}
 
-	signMessage(message: string): Promise<string> {
+	async signMessage(message: string): Promise<string> {
 		if (!this._privateKey) {
 			throw new Error('Private key is required to sign message');
 		}
@@ -102,12 +118,26 @@ class EVMWallet extends Web3Wallet {
 		return wallet.signMessage(message);
 	}
 
-	signTransaction(message: providers.TransactionRequest): Promise<string> {
+	async signTransaction(
+		message: providers.TransactionRequest
+	): Promise<string> {
 		if (!this._privateKey) {
 			throw new Error('Private key is required to sign transaction');
 		}
 		const wallet = new Wallet(this._privateKey, this.provider);
 		return wallet.signTransaction(message);
+	}
+
+	async getSigner<Signer>(): Promise<Signer> {
+		if (!this._privateKey) {
+			throw new Error('Private key is required to get signer');
+		}
+		if (!this.provider) {
+			throw new Error('Provider is required to get signer');
+		}
+		const eoaWallet = new Wallet(this._privateKey, this.provider);
+		const signer = eoaWallet.connect(this.provider);
+		return signer as Signer;
 	}
 
 	verifySignature(message: string, signature: string): boolean {
@@ -116,29 +146,13 @@ class EVMWallet extends Web3Wallet {
 		}
 		return utils.verifyMessage(message, signature) === this.address;
 	}
-
-	async switchNetwork(chainId: number): Promise<void> {
-		if (this.chainId === chainId) {
-			return;
-		}
-		const chain = CHAIN_AVAILABLES.find(c => c.id === chainId);
-		if (!chain) {
-			throw new Error('Chain not available');
-		}
-		if (!this.provider) {
-			throw new Error('Provider not available');
-		}
-		const provider = new providers.JsonRpcProvider(chain.rpcUrl, chain.id);
-		this.provider = provider;
-		this.chainId = chainId;
-	}
 }
 
 class ExternalEVMWallet extends Web3Wallet {
 	privateKey = undefined;
 	publicKey = undefined;
-	signer!: Signer;
 	externalProvider!: providers.Web3Provider;
+	private _signer!: Signer;
 
 	constructor(
 		public chainId: number,
@@ -158,9 +172,9 @@ class ExternalEVMWallet extends Web3Wallet {
 			chainId
 		);
 		wallet.externalProvider = externalProvider;
-		wallet.signer = externalProvider.getSigner();
+		wallet._signer = externalProvider.getSigner();
 		wallet.chainId = chainId;
-		wallet.address = await wallet.signer.getAddress();
+		wallet.address = await wallet._signer.getAddress();
 		return wallet;
 	}
 
@@ -179,15 +193,21 @@ class ExternalEVMWallet extends Web3Wallet {
 		this.chainId = chainId;
 	}
 	async sendTransaction(tx: utils.Deferrable<providers.TransactionRequest>) {
-		return this.signer.sendTransaction(tx);
-	}
-	signMessage(message: string) {
-		return this.signer.signMessage(message);
+		return this._signer.sendTransaction(tx);
 	}
 
-	signTransaction(tx: utils.Deferrable<providers.TransactionRequest>) {
-		return this.signer.signTransaction(tx);
+	async signMessage(message: string) {
+		return this._signer.signMessage(message);
 	}
+
+	async signTransaction(tx: utils.Deferrable<providers.TransactionRequest>) {
+		return this._signer.signTransaction(tx);
+	}
+
+	async getSigner<Signer>(): Promise<Signer> {
+		return this._signer as Signer;
+	}
+
 	verifySignature(message: string, signature: string) {
 		return utils.verifyMessage(message, signature) === this.address;
 	}
