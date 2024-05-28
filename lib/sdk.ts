@@ -211,6 +211,34 @@ export class FirebaseWeb3Connect {
 		await authProvider.signOut();
 	}
 
+	public async backupWallet(withUI?: boolean) {
+		if (withUI) {
+			const dialogElement = await setupSigninDialogElement(document.body, {
+				isLightMode: true,
+				enabledSigninMethods: [SigninMethod.Wallet],
+				integrator: this._ops?.dialogUI?.integrator,
+				logoUrl: this._ops?.dialogUI?.logoUrl
+			});
+			// remove all default login buttons
+			const btnsElement = dialogElement.shadowRoot?.querySelector(
+				'dialog .buttonsList'
+			) as HTMLElement;
+			btnsElement.remove();
+			dialogElement.showModal();
+			const { withEncryption, skip: reSkip } =
+				await dialogElement.promptBackup();
+			if (!reSkip) {
+				await storageService.executeBackup(
+					Boolean(withEncryption),
+					this._secret
+				);
+			}
+			dialogElement.hideModal();
+		} else {
+			throw new Error('Backup wallet without UI is not implemented yet');
+		}
+	}
+
 	/**
 	 * Method that manage the entire wallet management process base on user state.
 	 * Wallet values are set with the corresponding method base on the user authentication provider.
