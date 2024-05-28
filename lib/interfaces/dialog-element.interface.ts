@@ -64,6 +64,7 @@ export type FirebaseWeb3ConnectDialogElement = HTMLElement & {
 		withEncryption?: boolean | undefined;
 		skip?: boolean | undefined;
 		clearStorage?: boolean;
+		cancel?: boolean;
 	}>;
 
 	/**

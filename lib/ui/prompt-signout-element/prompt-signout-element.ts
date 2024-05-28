@@ -10,6 +10,7 @@ export const promptSignoutElement = async (
 	withEncryption?: boolean;
 	skip?: boolean;
 	clearStorage?: boolean;
+	cancel?: boolean;
 }> => {
 	const { html } = ops || {};
 	const container = document.createElement('div');
@@ -40,7 +41,7 @@ export const promptSignoutElement = async (
 
       <button id="button__signout">Signout</button>
       
-      <p><a class="button__skip">cancel</a></p>
+      <p><a class="button__cancel">cancel</a></p>
 			`
 			}
 
@@ -52,14 +53,12 @@ export const promptSignoutElement = async (
 		const toggleClear = container.querySelector(
 			'#toggle__clear_data'
 		) as HTMLInputElement;
-		const buttonSkip = container.querySelector(
-			'.button__skip'
+		const buttonCancel = container.querySelector(
+			'.button__cancel'
 		) as HTMLButtonElement;
-		buttonSkip.addEventListener('click', e => {
+		buttonCancel.addEventListener('click', e => {
 			e.preventDefault();
-			resolve({
-				skip: true
-			});
+			resolve({ cancel: true });
 			container.remove();
 			ref.style.display = 'block';
 		});

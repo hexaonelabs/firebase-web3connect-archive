@@ -194,8 +194,13 @@ export class FirebaseWeb3Connect {
 			const {
 				withEncryption,
 				skip: reSkip,
-				clearStorage
+				clearStorage,
+				cancel
 			} = await dialogElement.promptSignoutWithBackup();
+			if (cancel) {
+				dialogElement.hideModal();
+				return;
+			}
 			if (!reSkip) {
 				await storageService.executeBackup(
 					Boolean(withEncryption),
