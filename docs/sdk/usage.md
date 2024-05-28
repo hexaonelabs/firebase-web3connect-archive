@@ -49,3 +49,13 @@ You can get user information using `.userInfo()` method with Firebase Web3Connec
 // Get user information
 const userInfo = firebaseWeb3Connect.userInfo();
 ```
+
+## Get Wallet Singer
+
+A Signer is an object that can sign transactions and messages with a private key.
+You can get wallet signer using `.getSigner()` method with Firebase Web3Connect instance.
+
+```javascript
+// Get wallet signer
+const signer = firebaseWeb3Connect.getSigner();
+```
