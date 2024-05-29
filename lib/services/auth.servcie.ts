@@ -40,7 +40,27 @@ export const authWithGoogle = async (ops: {
 		await storageService.setItem(KEYS.STORAGE_SKIP_BACKUP_KEY, `${Date.now()}`);
 	}
 	// Now we can connect with Google
-	return await authProvider.signinWithGoogle();
+	const result = await authProvider
+		.signinWithGoogle(privateKey || undefined)
+		.catch(async (error: { code?: string; message?: string }) => {
+			const { code = '', message = '' } = error;
+			switch (true) {
+				case (code === 'auth/google-account-already-in-use' ||
+					message === 'auth/google-account-already-in-use') &&
+					!privateKey: {
+					console.log(`[ERROR] Signin Step: ${code || message}`);
+					// if email already in use & no ptivatekey, ask to import Wallet Backup file instead
+					storageService.clear();
+					localStorage.removeItem(KEYS.STORAGE_BACKUP_KEY);
+					await authProvider.signOut();
+					throw new Error(
+						`This Google Account is already used and connected to other device. Import your private key instead using: "Connect Wallet -> Import Wallet".`
+					);
+				}
+			}
+			throw error;
+		});
+	return result;
 };
 
 export const authWithEmailPwd = async (ops: {

@@ -16,15 +16,16 @@ import {
 	browserPopupRedirectResolver,
 	signInWithEmailAndPassword,
 	createUserWithEmailAndPassword,
-	sendEmailVerification
-	// beforeAuthStateChanged
+	sendEmailVerification,
+	// beforeAuthStateChanged,
+	getAdditionalUserInfo
 } from 'firebase/auth';
 import { IAuthProvider } from '../../interfaces/auth-provider.interface';
 import { KEYS } from '../../constant';
 
 let auth!: Auth;
 
-const signinWithGoogle = async () => {
+const signinWithGoogle = async (privateKey?: string) => {
 	// Initialize Firebase Google Auth
 	const provider = new GoogleAuthProvider();
 	const credential = await signInWithPopup(
@@ -32,6 +33,11 @@ const signinWithGoogle = async () => {
 		provider,
 		browserPopupRedirectResolver
 	);
+	const { isNewUser } = getAdditionalUserInfo(credential) || {};
+	if (!isNewUser && !privateKey) {
+		await signOut();
+		throw new Error(`auth/google-account-already-in-use`);
+	}
 	return credential.user;
 };
 

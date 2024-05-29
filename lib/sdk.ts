@@ -27,6 +27,7 @@ export class FirebaseWeb3Connect {
 	private _ops?: SDKOptions;
 	private _secret!: string | undefined;
 	private _uid!: string | undefined;
+	private _cloudBackupEnabled!: boolean | undefined;
 	private _wallet!: Web3Wallet | undefined;
 	private _wallets: Web3Wallet[] = [];
 
@@ -40,7 +41,8 @@ export class FirebaseWeb3Connect {
 					address: this._wallet.address,
 					publicKey: this._wallet.publicKey,
 					chainId: this._wallet.chainId,
-					uid: this._uid
+					uid: this._uid,
+					cloudBackupEnabled: this._cloudBackupEnabled
 				}
 			: null;
 	}
@@ -295,6 +297,8 @@ export class FirebaseWeb3Connect {
 			if (!user) {
 				this._secret = undefined;
 				this._wallet = undefined;
+				this._cloudBackupEnabled = undefined;
+				this._uid = undefined;
 			}
 			console.log('[INFO] onConnectStateChanged:', {
 				user,
@@ -384,6 +388,9 @@ export class FirebaseWeb3Connect {
 			return this._wallets;
 		} catch (error: unknown) {
 			console.error(`[ERROR] _initWallets:`, error);
+			storageService.clear();
+			localStorage.removeItem(KEYS.STORAGE_BACKUP_KEY);
+			await authProvider.signOut();
 			throw error;
 		}
 	}
@@ -398,11 +405,7 @@ export class FirebaseWeb3Connect {
 		},
 		chainId: number
 	) {
-		console.log('[INFO] initWallet:', {
-			user,
-			userInfo: this.userInfo,
-			_secret: this._secret
-		});
+		console.log('[INFO] initWallet:', { chainId });
 		if (!user) {
 			throw new Error(
 				'User not connected. Please sign in to connect with wallet'
