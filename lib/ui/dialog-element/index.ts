@@ -84,7 +84,10 @@ const addAndWaitUIEventsResult = (
 						);
 						const { withEncryption, skip } = !privateKey
 							? await dialogElement.promptBackup()
-							: { withEncryption: undefined, skip: undefined };
+							: {
+									withEncryption: undefined,
+									skip: undefined
+								};
 						// use service to request connection with google
 						const { uid } = await authWithGoogle({
 							password,
@@ -92,7 +95,11 @@ const addAndWaitUIEventsResult = (
 							withEncryption
 						});
 						await dialogElement.toggleSpinnerAsCheck();
-						resolve({ uid, password, authMethod: detail as SigninMethod });
+						resolve({
+							uid,
+							password,
+							authMethod: detail as SigninMethod
+						});
 					} catch (error: unknown) {
 						const message =
 							(error as Error)?.message ||
@@ -120,7 +127,11 @@ const addAndWaitUIEventsResult = (
 							withEncryption
 						});
 						await dialogElement.toggleSpinnerAsCheck();
-						resolve({ uid, password, authMethod: detail as SigninMethod });
+						resolve({
+							uid,
+							password,
+							authMethod: detail as SigninMethod
+						});
 					} catch (error: unknown) {
 						const message =
 							(error as Error)?.message ||

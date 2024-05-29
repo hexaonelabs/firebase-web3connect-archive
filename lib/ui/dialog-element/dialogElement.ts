@@ -30,8 +30,8 @@ export class HexaSigninDialogElement
 					method !== undefined
 			) || DEFAULT_SIGNIN_METHODS;
 		const integrator = _ops?.integrator
-			? 'Sign in to ' + _ops.integrator
-			: 'Sign in using FirebaseWeb3Connect';
+			? _ops.integrator
+			: 'FirebaseWeb3Connect';
 		const logoUrl =
 			(this.ops?.logoUrl?.length || 0) > 0 ? this.ops?.logoUrl : undefined;
 		// object validation

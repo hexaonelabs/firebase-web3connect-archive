@@ -132,11 +132,14 @@ export class FirebaseWeb3Connect {
 				return this.userInfo;
 			}
 			this._secret = password;
-			// // init wallet to set user info
-			// await this._initWallets({
-			// 	isAnonymous,
-			// 	uid
-			// });
+			this._uid = uid;
+			// init wallet to set user info BEFORE firebase hook `onAuthStateChanged` is triggered
+			// to prevent unexisting user info that is needed to perform wallet backup and other operations
+			// and to return `userInfo` with values set.
+			await this._initWallets({
+				isAnonymous,
+				uid
+			});
 		} catch (error: unknown) {
 			const message =
 				(error as Error)?.message || 'An error occured while connecting';
