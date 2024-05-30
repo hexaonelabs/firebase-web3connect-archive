@@ -15,14 +15,17 @@ import {
 	User,
 	browserPopupRedirectResolver,
 	signInWithEmailAndPassword,
-	createUserWithEmailAndPassword
+	createUserWithEmailAndPassword,
+	sendEmailVerification,
+	// beforeAuthStateChanged,
+	getAdditionalUserInfo
 } from 'firebase/auth';
 import { IAuthProvider } from '../../interfaces/auth-provider.interface';
 import { KEYS } from '../../constant';
 
 let auth!: Auth;
 
-const signinWithGoogle = async () => {
+const signinWithGoogle = async (privateKey?: string) => {
 	// Initialize Firebase Google Auth
 	const provider = new GoogleAuthProvider();
 	const credential = await signInWithPopup(
@@ -30,6 +33,11 @@ const signinWithGoogle = async () => {
 		provider,
 		browserPopupRedirectResolver
 	);
+	const { isNewUser } = getAdditionalUserInfo(credential) || {};
+	if (!isNewUser && !privateKey) {
+		await signOut();
+		throw new Error(`auth/google-account-already-in-use`);
+	}
 	return credential.user;
 };
 
@@ -93,7 +101,12 @@ const signInAsAnonymous = async () => {
 	return await signInAnonymously(auth);
 };
 
-const signInWithEmailPwd = async (email: string, password: string) => {
+const signInWithEmailPwd = async (
+	email: string,
+	password: string,
+	privateKey?: string
+) => {
+	let user!: User;
 	try {
 		// Create user with email and password
 		const credential = await createUserWithEmailAndPassword(
@@ -101,20 +114,28 @@ const signInWithEmailPwd = async (email: string, password: string) => {
 			email,
 			password
 		);
-		return credential.user;
+		user = credential.user;
+		if (!user.emailVerified) {
+			await sendEmailVerification(user);
+		}
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	} catch (error: any) {
 		// only error with { code: string } type
-		if (error?.code === 'auth/email-already-in-use') {
+		if (error?.code === 'auth/email-already-in-use' && privateKey) {
 			const credential = await signInWithEmailAndPassword(
 				auth,
 				email,
 				password
 			);
-			return credential.user;
+			user = credential.user;
+			return user;
 		}
 		throw error;
 	}
+	if (!user) {
+		throw new Error('User not found');
+	}
+	return user;
 };
 
 const signOut = async () => {

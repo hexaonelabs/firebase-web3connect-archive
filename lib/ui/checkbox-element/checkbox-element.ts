@@ -1,13 +1,13 @@
-
-export const CheckboxElement = (label?: string) => {
-  return `
+export const CheckboxElement = (ops?: { label: string; id: string }) => {
+	const { label, id } = ops || {};
+	return `
     <style>
     
       .checkbox__container {
         display: flex;
         align-items: center;
         justify-content: center;
-        margin: 1rem auto 0;
+        margin: 0.25rem auto;
         font-size: 0.8rem;
       }
 
@@ -47,8 +47,8 @@ export const CheckboxElement = (label?: string) => {
       }
     </style>
     <div class="checkbox__container">
-      <input type="checkbox" id="toggle__encription" name="toggle__encription" checked="true">
-      <label for="toggle__encription">${ label ? label : 'Encrypt backup file'}</label>
+      <input type="checkbox" id="${id}" name="${id}" checked="true">
+      <label for="${id}">${label}</label>
     </div>
   `;
-}
+};

@@ -34,7 +34,9 @@ export const initWallet = async (
 
 	// connect with external wallet
 	if (!secret && user && user.isAnonymous === true) {
-		const wallet = await evmWallet.connectWithExternalWallet();
+		const wallet = await evmWallet.connectWithExternalWallet({
+			chainId
+		});
 		return wallet;
 	}
 

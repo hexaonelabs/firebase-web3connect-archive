@@ -11,6 +11,10 @@ export function setupAccountTab(
     <p id="address">${web3Wallet?.userInfo?.address}</p>
     <button id="signout">signout</button><br/>
 
+		<h2>Backup Wallet</h2>
+		<button id="backup__btn">Download Backup file</button>
+		<button id="store_backup__btn">Store Backup file</button>
+
 		<h2>Switch Network</h2>
 		<p>Current chain: <span id="currentChain">${web3Wallet?.userInfo?.chainId} ${NETWORK[Number(web3Wallet?.userInfo?.chainId)]}</span></p>
 		<div id="switchNetwork">
@@ -63,8 +67,18 @@ export function setupAccountTab(
 	});
 
 	element.querySelector('#signout')?.addEventListener('click', async () => {
-		await web3Wallet.signout();
+		await web3Wallet.signout(true);
 	});
+
+	element.querySelector('#backup__btn')?.addEventListener('click', async () => {
+		await firebaseWeb3Connect.backupWallet(true);
+	});
+	element
+		.querySelector('#store_backup__btn')
+		?.addEventListener('click', async () => {
+			alert(`Premium feature not implemented yet.`);
+		});
+
 	element
 		.querySelector('#switchNetwork')
 		?.addEventListener('click', async e => {

@@ -20,12 +20,14 @@ import { Auth } from 'firebase/auth';
 import { SDKOptions } from './interfaces/sdk.interface.ts';
 import { storageService } from './services/storage.service.ts';
 import { Web3Wallet } from './networks/web3-wallet.ts';
+import Crypto from './providers/crypto/crypto.ts';
 
 export class FirebaseWeb3Connect {
 	private readonly _apiKey!: string;
 	private _ops?: SDKOptions;
 	private _secret!: string | undefined;
 	private _uid!: string | undefined;
+	private _cloudBackupEnabled!: boolean | undefined;
 	private _wallet!: Web3Wallet | undefined;
 	private _wallets: Web3Wallet[] = [];
 
@@ -39,7 +41,8 @@ export class FirebaseWeb3Connect {
 					address: this._wallet.address,
 					publicKey: this._wallet.publicKey,
 					chainId: this._wallet.chainId,
-					uid: this._uid
+					uid: this._uid,
+					cloudBackupEnabled: this._cloudBackupEnabled
 				}
 			: null;
 	}
@@ -131,7 +134,10 @@ export class FirebaseWeb3Connect {
 				return this.userInfo;
 			}
 			this._secret = password;
-			// init wallet to set user info
+			this._uid = uid;
+			// init wallet to set user info BEFORE firebase hook `onAuthStateChanged` is triggered
+			// to prevent unexisting user info that is needed to perform wallet backup and other operations
+			// and to return `userInfo` with values set.
 			await this._initWallets({
 				isAnonymous,
 				uid
@@ -176,6 +182,47 @@ export class FirebaseWeb3Connect {
 
 	public async signout(withUI?: boolean) {
 		// display dialog to backup seed if withUI is true
+		const isExternalWallet = !this.wallet?.publicKey;
+		if (withUI && !isExternalWallet) {
+			const dialogElement = await setupSigninDialogElement(document.body, {
+				isLightMode: true,
+				enabledSigninMethods: [SigninMethod.Wallet],
+				integrator: this._ops?.dialogUI?.integrator,
+				logoUrl: this._ops?.dialogUI?.logoUrl
+			});
+			// remove all default login buttons
+			const btnsElement = dialogElement.shadowRoot?.querySelector(
+				'dialog .buttonsList'
+			) as HTMLElement;
+			btnsElement.remove();
+			// display modal
+			dialogElement.showModal();
+			const {
+				withEncryption,
+				skip: reSkip,
+				clearStorage,
+				cancel
+			} = await dialogElement.promptSignoutWithBackup();
+			if (cancel) {
+				dialogElement.hideModal();
+				return;
+			}
+			if (!reSkip) {
+				await storageService.executeBackup(
+					Boolean(withEncryption),
+					this._secret
+				);
+			}
+			if (clearStorage) {
+				await storageService.clear();
+			}
+			await dialogElement.hideModal();
+		}
+		await storageService.removeItem(KEYS.STORAGE_SECRET_KEY);
+		await authProvider.signOut();
+	}
+
+	public async backupWallet(withUI?: boolean) {
 		if (withUI) {
 			const dialogElement = await setupSigninDialogElement(document.body, {
 				isLightMode: true,
@@ -183,14 +230,11 @@ export class FirebaseWeb3Connect {
 				integrator: this._ops?.dialogUI?.integrator,
 				logoUrl: this._ops?.dialogUI?.logoUrl
 			});
-			// remove all button
-			// hide buttons
+			// remove all default login buttons
 			const btnsElement = dialogElement.shadowRoot?.querySelector(
 				'dialog .buttonsList'
 			) as HTMLElement;
-			btnsElement.style.display = 'none';
-			addAndWaitUIEventsResult(dialogElement);
-			// display modal
+			btnsElement.remove();
 			dialogElement.showModal();
 			const { withEncryption, skip: reSkip } =
 				await dialogElement.promptBackup();
@@ -200,10 +244,10 @@ export class FirebaseWeb3Connect {
 					this._secret
 				);
 			}
-			await dialogElement.hideModal();
+			dialogElement.hideModal();
+		} else {
+			throw new Error('Backup wallet without UI is not implemented yet');
 		}
-		await storageService.removeItem(KEYS.STORAGE_SECRET_KEY);
-		await authProvider.signOut();
 	}
 
 	/**
@@ -216,6 +260,11 @@ export class FirebaseWeb3Connect {
 	 */
 	public onConnectStateChanged(cb: (user: { address: string } | null) => void) {
 		return authProvider.getOnAuthStateChanged(async user => {
+			if (user?.uid && !user?.emailVerified && !user?.isAnonymous) {
+				console.log('[INFO] onConnectStateChanged:', user);
+				await this._displayVerifyEMailModal();
+				return;
+			}
 			this._uid = user?.uid;
 
 			if (!this.userInfo && user) {
@@ -223,17 +272,33 @@ export class FirebaseWeb3Connect {
 					await this._initWallets(user);
 				} catch (error: unknown) {
 					await authProvider.signOut();
-					await storageService.clear();
+					// await storageService.clear();
 					const message =
 						(error as Error)?.message || 'An error occured while connecting';
 					console.error('[ERROR] onConnectStateChanged:', message);
 					//throw error;
+				}
+
+				// set secret if undefined and stored in service
+				const encryptedSecret = await storageService.getItem(
+					KEYS.STORAGE_SECRET_KEY
+				);
+				if (encryptedSecret) {
+					const secret = await Crypto.decrypt(
+						storageService.getUniqueID(),
+						encryptedSecret
+					);
+					if (!this._secret) {
+						this._secret = secret;
+					}
 				}
 			}
 			// reset state if no user connected
 			if (!user) {
 				this._secret = undefined;
 				this._wallet = undefined;
+				this._cloudBackupEnabled = undefined;
+				this._uid = undefined;
 			}
 			console.log('[INFO] onConnectStateChanged:', {
 				user,
@@ -323,6 +388,9 @@ export class FirebaseWeb3Connect {
 			return this._wallets;
 		} catch (error: unknown) {
 			console.error(`[ERROR] _initWallets:`, error);
+			storageService.clear();
+			localStorage.removeItem(KEYS.STORAGE_BACKUP_KEY);
+			await authProvider.signOut();
 			throw error;
 		}
 	}
@@ -337,11 +405,7 @@ export class FirebaseWeb3Connect {
 		},
 		chainId: number
 	) {
-		console.log('[INFO] initWallet:', {
-			user,
-			userInfo: this.userInfo,
-			_secret: this._secret
-		});
+		console.log('[INFO] initWallet:', { chainId });
 		if (!user) {
 			throw new Error(
 				'User not connected. Please sign in to connect with wallet'
@@ -360,5 +424,41 @@ export class FirebaseWeb3Connect {
 
 	private async _setWallet(wallet?: Web3Wallet) {
 		this._wallet = wallet;
+	}
+
+	private async _displayVerifyEMailModal() {
+		const dialogElement = await setupSigninDialogElement(document.body, {
+			isLightMode: true,
+			enabledSigninMethods: [SigninMethod.Wallet],
+			integrator: this._ops?.dialogUI?.integrator,
+			logoUrl: this._ops?.dialogUI?.logoUrl
+		});
+		// hide all btns
+		const btnsElement = dialogElement.shadowRoot?.querySelector(
+			'dialog .buttonsList'
+		) as HTMLElement;
+		btnsElement.remove();
+		// add HTML to explain the user to verify email
+		const verifyElement = document.createElement('div');
+		verifyElement.innerHTML = `
+			<p>
+				Please verify your email before connecting with your wallet.
+				<br />
+				Click the link in the email we sent you to verify your email address.
+			</p>
+			<button id="button__ok">OK</button>
+		`;
+		dialogElement.shadowRoot
+			?.querySelector('dialog #spinner')
+			?.after(verifyElement);
+		dialogElement.showModal();
+		// add event listener to close modal
+		const buttonOk = dialogElement.shadowRoot?.querySelector(
+			'#button__ok'
+		) as HTMLButtonElement;
+		buttonOk.addEventListener('click', () => {
+			dialogElement.hideModal();
+			window.location.reload();
+		});
 	}
 }

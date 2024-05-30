@@ -255,7 +255,9 @@ interface WindowWithEthereumProvider extends Window {
 	ethereum: providers.ExternalProvider;
 }
 
-const connectWithExternalWallet = async (): Promise<Web3Wallet> => {
+const connectWithExternalWallet = async (ops?: {
+	chainId?: number;
+}): Promise<Web3Wallet> => {
 	// check if metamask/browser extension is installed
 	if (!(window as unknown as WindowWithEthereumProvider).ethereum) {
 		throw new Error(`
@@ -265,13 +267,14 @@ const connectWithExternalWallet = async (): Promise<Web3Wallet> => {
 	}
 	// get current account
 	const web3Provider = new providers.Web3Provider(
-		(window as unknown as WindowWithEthereumProvider).ethereum
+		(window as unknown as WindowWithEthereumProvider).ethereum,
+		ops?.chainId || CHAIN_DEFAULT.id
 	);
 	const accounts = await web3Provider.send('eth_requestAccounts', []);
 	console.log(`[INFO] connectWithExternalWallet: `, accounts);
 	// set to default chain
 	try {
-		const chainIdAsHex = utils.hexValue(CHAIN_DEFAULT.id);
+		const chainIdAsHex = utils.hexValue(ops?.chainId || CHAIN_DEFAULT.id);
 		await web3Provider.send('wallet_switchEthereumChain', [
 			{ chainId: chainIdAsHex }
 		]);

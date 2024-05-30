@@ -26,7 +26,7 @@ export type FirebaseWeb3ConnectDialogElement = HTMLElement & {
 	/**
 	 * Method that remove a spinner and display a check icon to the user
 	 */
-	toggleSpinnerAsCheck(): Promise<boolean>;
+	toggleSpinnerAsCheck(message?: string): Promise<boolean>;
 
 	/**
 	 * Method that remove spinner and display a cross icon
@@ -54,6 +54,17 @@ export type FirebaseWeb3ConnectDialogElement = HTMLElement & {
 	promptBackup(): Promise<{
 		withEncryption?: boolean | undefined;
 		skip?: boolean | undefined;
+	}>;
+
+	/**
+	 * Method that display prompt to user before signout
+	 * to request backup of wallet seed phrase
+	 */
+	promptSignoutWithBackup(): Promise<{
+		withEncryption?: boolean | undefined;
+		skip?: boolean | undefined;
+		clearStorage?: boolean;
+		cancel?: boolean;
 	}>;
 
 	/**

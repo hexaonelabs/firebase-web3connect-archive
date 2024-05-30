@@ -10,6 +10,7 @@ import { promptWalletTypeElement } from '../prompt-wallet-type-element/prompt-wa
 import { DialogUIOptions } from '../../interfaces/sdk.interface';
 import { FirebaseWeb3ConnectDialogElement } from '../../interfaces/dialog-element.interface';
 import { storageService } from '../../services/storage.service';
+import { promptSignoutElement } from '../prompt-signout-element/prompt-signout-element';
 
 // export webcomponent with shadowdom
 export class HexaSigninDialogElement
@@ -29,8 +30,8 @@ export class HexaSigninDialogElement
 					method !== undefined
 			) || DEFAULT_SIGNIN_METHODS;
 		const integrator = _ops?.integrator
-			? 'Sign in to ' + _ops.integrator
-			: 'Sign in using FirebaseWeb3Connect';
+			? _ops.integrator
+			: 'FirebaseWeb3Connect';
 		const logoUrl =
 			(this.ops?.logoUrl?.length || 0) > 0 ? this.ops?.logoUrl : undefined;
 		// object validation
@@ -194,7 +195,7 @@ export class HexaSigninDialogElement
 			});
 	}
 
-	public async toggleSpinnerAsCheck(): Promise<boolean> {
+	public async toggleSpinnerAsCheck(message?: string): Promise<boolean> {
 		await new Promise(resolve => {
 			const t = setTimeout(() => {
 				clearTimeout(t);
@@ -312,6 +313,7 @@ export class HexaSigninDialogElement
           />
       </g>
     </svg>
+		${message ? `<p>${message}</p>` : ''}
     `;
 		return new Promise(resolve => {
 			const t = setTimeout(() => {
@@ -411,6 +413,13 @@ export class HexaSigninDialogElement
 
 	public async promptBackup() {
 		const value = await promptToDownloadElement(
+			this.shadowRoot?.querySelector('dialog #spinner') as HTMLElement
+		);
+		return value;
+	}
+
+	public async promptSignoutWithBackup() {
+		const value = await promptSignoutElement(
 			this.shadowRoot?.querySelector('dialog #spinner') as HTMLElement
 		);
 		return value;
