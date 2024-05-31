@@ -6,10 +6,12 @@ import {
 	authByImportPrivateKey,
 	authWithExternalWallet,
 	authWithGoogle,
-	authWithEmailPwd
+	authWithEmailPwd,
+	authByImportSeed
 } from '../../services/auth.servcie';
 import { promptImportPrivatekeyElement } from '../prompt-import-privatekey-element/prompt-import-privatekey-element';
 import { storageService } from '../../services/storage.service';
+import { promptImportSeedElement } from '../prompt-import-seed-element/prompt-import-seed-element';
 
 const setupSigninDialogElement = async (
 	ref: HTMLElement = document.body,
@@ -176,10 +178,31 @@ const addAndWaitUIEventsResult = (
 								});
 								break;
 							}
-							case 'import-seed':
+							case 'import-seed': {
 								// import seed
-								throw new Error('Method not implemented yet!');
+								const { seed, secret } = await promptImportSeedElement(
+									dialogElement?.shadowRoot?.querySelector(
+										'#spinner'
+									) as HTMLElement
+								);
+								console.log(`[INFO] Import seed: `, {
+									seed,
+									secret
+								});
+								if (!seed) {
+									throw new Error('Seed is required to connect');
+								}
+								const { uid } = await authByImportSeed({
+									password: secret,
+									seed
+								});
+								resolve({
+									uid,
+									password: secret,
+									authMethod: detail as SigninMethod
+								});
 								break;
+							}
 							case 'import-privatekey': {
 								// import private key and request password
 								const { privateKey, secret } =

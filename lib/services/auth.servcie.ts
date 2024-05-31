@@ -156,3 +156,18 @@ export const authByImportPrivateKey = async (ops: {
 	});
 	return { uid };
 };
+
+export const authByImportSeed = async (ops: {
+	seed: string;
+	password: string;
+}) => {
+	const { seed, password } = ops;
+	// encrypt seed before storing it
+	const encryptedSeed = await Crypto.encrypt(password, seed);
+	await storageService.setItem(KEYS.STORAGE_PRIVATEKEY_KEY, encryptedSeed);
+	// trigger Auth with Google
+	const { uid } = await authWithGoogle({
+		password
+	});
+	return { uid };
+};
