@@ -248,6 +248,7 @@ export enum KEYS {
 	AUTH_SIGNATURE_KEY = 'hexa-signature',
 	AUTH_SIGNATURE_VALUE = 'hexa-signature-value',
 	STORAGE_PRIVATEKEY_KEY = 'hexa-private-key',
+	STORAGE_SEED_KEY = 'hexa-seed-key',
 	STORAGE_SECRET_KEY = 'hexa-secret',
 	STORAGE_BACKUP_KEY = 'hexa-backup',
 	STORAGE_SKIP_BACKUP_KEY = 'hexa-skip',
