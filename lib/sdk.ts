@@ -21,6 +21,7 @@ import { SDKOptions } from './interfaces/sdk.interface.ts';
 import { storageService } from './services/storage.service.ts';
 import { Web3Wallet } from './networks/web3-wallet.ts';
 import Crypto from './providers/crypto/crypto.ts';
+import { Logger } from './utils.ts';
 
 export class FirebaseWeb3Connect {
 	private readonly _apiKey!: string;
@@ -67,7 +68,7 @@ export class FirebaseWeb3Connect {
 				'[ERROR] FirebaseWeb3Connect: HTMLDialogElement not supported'
 			);
 		}
-		console.log(`[INFO] FirebaseWeb3Connect initialized and ready!`, {
+		Logger.log(`[INFO] FirebaseWeb3Connect initialized and ready!`, {
 			config: this._ops,
 			mode: import.meta.env.MODE,
 			apiKey: this._apiKey,
@@ -123,7 +124,7 @@ export class FirebaseWeb3Connect {
 			if (authMethod && authMethod !== SigninMethod.Wallet) {
 				await storageService.setItem(KEYS.STORAGE_AUTH_METHOD_KEY, authMethod);
 			}
-			console.log(`[INFO] Closing dialog`, { password, isAnonymous, uid });
+			Logger.log(`[INFO] Closing dialog`, { password, isAnonymous, uid });
 			// handle close event && anonymous user
 			if (!uid || isAnonymous) {
 				dialogElement.hideModal();
@@ -261,7 +262,7 @@ export class FirebaseWeb3Connect {
 	public onConnectStateChanged(cb: (user: { address: string } | null) => void) {
 		return authProvider.getOnAuthStateChanged(async user => {
 			if (user?.uid && !user?.emailVerified && !user?.isAnonymous) {
-				console.log('[INFO] onConnectStateChanged:', user);
+				Logger.log('[INFO] onConnectStateChanged:', user);
 				await this._displayVerifyEMailModal();
 				return;
 			}
@@ -275,7 +276,7 @@ export class FirebaseWeb3Connect {
 					// await storageService.clear();
 					const message =
 						(error as Error)?.message || 'An error occured while connecting';
-					console.error('[ERROR] onConnectStateChanged:', message);
+					Logger.error('[ERROR] onConnectStateChanged:', message);
 					//throw error;
 				}
 
@@ -300,7 +301,7 @@ export class FirebaseWeb3Connect {
 				this._cloudBackupEnabled = undefined;
 				this._uid = undefined;
 			}
-			console.log('[INFO] onConnectStateChanged:', {
+			Logger.log('[INFO] onConnectStateChanged:', {
 				user,
 				userInfo: this.userInfo,
 				provider: this.provider,
@@ -326,7 +327,7 @@ export class FirebaseWeb3Connect {
 				CHAIN_AVAILABLES.find(chain => chain.id === wallet.chainId)?.type ===
 					chain?.type
 		);
-		console.log(`[INFO] switchNetwork:`, { wallet, wallets: this._wallets });
+		Logger.log(`[INFO] switchNetwork:`, { wallet, wallets: this._wallets });
 		if (wallet) {
 			// check if wallet have same chainId or switch
 			if (wallet.chainId !== chainId) {
@@ -384,10 +385,10 @@ export class FirebaseWeb3Connect {
 			await this._setWallet(
 				wallets.find(wallet => wallet.chainId === defaultNetworkId)
 			);
-			console.log(`[INFO] _initWallets:`, wallets);
+			Logger.log(`[INFO] _initWallets:`, wallets);
 			return this._wallets;
 		} catch (error: unknown) {
-			console.error(`[ERROR] _initWallets:`, error);
+			Logger.error(`[ERROR] _initWallets:`, error);
 			storageService.clear();
 			localStorage.removeItem(KEYS.STORAGE_BACKUP_KEY);
 			await authProvider.signOut();
@@ -405,7 +406,7 @@ export class FirebaseWeb3Connect {
 		},
 		chainId: number
 	) {
-		console.log('[INFO] initWallet:', { chainId });
+		Logger.log('[INFO] initWallet:', { chainId });
 		if (!user) {
 			throw new Error(
 				'User not connected. Please sign in to connect with wallet'

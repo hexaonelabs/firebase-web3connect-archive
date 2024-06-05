@@ -12,6 +12,7 @@ import {
 import { promptImportPrivatekeyElement } from '../prompt-import-privatekey-element/prompt-import-privatekey-element';
 import { storageService } from '../../services/storage.service';
 import { promptImportSeedElement } from '../prompt-import-seed-element/prompt-import-seed-element';
+import { Logger } from '../../utils';
 
 const setupSigninDialogElement = async (
 	ref: HTMLElement = document.body,
@@ -67,7 +68,7 @@ const addAndWaitUIEventsResult = (
 			// listen to connect event
 			dialogElement.addEventListener('connect', async e => {
 				const detail = (e as CustomEvent<string>).detail;
-				console.log(`[INFO] connect event: `, detail);
+				Logger.log(`[INFO] connect event: `, detail);
 				// exclude cancel event {
 				if (detail === 'cancel') {
 					dialogElement.hideModal();
@@ -166,7 +167,7 @@ const addAndWaitUIEventsResult = (
 				if (detail === 'connect-wallet') {
 					try {
 						const walletType = await dialogElement.promptWalletType();
-						console.log(`[INFO] Wallet type: `, walletType);
+						Logger.log(`[INFO] Wallet type: `, walletType);
 						switch (walletType) {
 							case 'browser-extension': {
 								const { uid } = await authWithExternalWallet();
@@ -185,7 +186,7 @@ const addAndWaitUIEventsResult = (
 										'#spinner'
 									) as HTMLElement
 								);
-								console.log(`[INFO] Import seed: `, {
+								Logger.log(`[INFO] Import seed: `, {
 									seed,
 									secret
 								});
@@ -211,7 +212,7 @@ const addAndWaitUIEventsResult = (
 											'#spinner'
 										) as HTMLElement
 									);
-								console.log(`[INFO] Import private key: `, {
+								Logger.log(`[INFO] Import private key: `, {
 									privateKey,
 									secret
 								});

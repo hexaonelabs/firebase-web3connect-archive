@@ -19,6 +19,7 @@ import * as bs58 from 'bs58';
 import { Web3Wallet } from './web3-wallet';
 import { IWalletProvider } from '../interfaces/walllet-provider.interface';
 import { NETWORK } from '../constant';
+import { Logger } from '../utils';
 
 const generateDID = (address: string) => {
 	return `did:ethr:${address}`;
@@ -59,7 +60,7 @@ class SolanaWallet extends Web3Wallet {
 		amount: number;
 		tokenAddress?: string;
 	}): Promise<TransactionResponse> {
-		console.log('sendTransaction', tx);
+		Logger.log('sendTransaction', tx);
 		if (!this._privateKey) {
 			throw new Error('Private key is required to send transaction');
 		}
@@ -134,17 +135,17 @@ class SolanaWallet extends Web3Wallet {
 	}
 
 	signTransaction(tx: unknown): Promise<string> {
-		console.log('signTransaction', tx);
+		Logger.log('signTransaction', tx);
 		throw new Error('Method not implemented.');
 	}
 
 	async signMessage(message: string): Promise<string> {
-		console.log('signMessage', message);
+		Logger.log('signMessage', message);
 		throw new Error('Method not implemented.');
 	}
 
 	verifySignature(message: string, signature: string): boolean {
-		console.log('[INFO]: verifySignature:', { message, signature });
+		Logger.log('[INFO]: verifySignature:', { message, signature });
 		if (!this.address) {
 			throw new Error('Address is required to verify signature');
 		}
@@ -152,7 +153,7 @@ class SolanaWallet extends Web3Wallet {
 	}
 
 	async switchNetwork(chainId: number): Promise<void> {
-		console.log('switchNetwork', chainId);
+		Logger.log('switchNetwork', chainId);
 		throw new Error('Method not implemented.');
 	}
 

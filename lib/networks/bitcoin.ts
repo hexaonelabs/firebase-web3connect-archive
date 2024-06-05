@@ -5,6 +5,7 @@ import ecc from '@bitcoinerlab/secp256k1';
 import { Web3Wallet } from './web3-wallet';
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import { IWalletProvider } from '../interfaces/walllet-provider.interface';
+import { Logger } from '../utils';
 
 const generateDID = (address: string) => {
 	return `did:ethr:${address}`;
@@ -49,24 +50,24 @@ class BTCWallet extends Web3Wallet {
 	}
 
 	sendTransaction(tx: unknown): Promise<TransactionResponse> {
-		console.log('sendTransaction', tx);
+		Logger.log('sendTransaction', tx);
 		throw new Error('Method not implemented.');
 	}
 
 	signTransaction(tx: unknown): Promise<string> {
-		console.log('signTransaction', tx);
+		Logger.log('signTransaction', tx);
 		throw new Error('Method not implemented.');
 	}
 
 	async signMessage(message: string): Promise<string> {
-		console.log('signMessage', message);
+		Logger.log('signMessage', message);
 		// Sign the message with the private key
 		const bufferMsg = Buffer.from(message, 'utf-8');
 		const hash = bitcoin.crypto.sha256(bufferMsg);
 		// generate KeyPair from private key
 		const keyPair = this._generateKeyPair();
 		const signature = keyPair.sign(hash);
-		console.log(`Signature: ${signature.toString('base64')}\n`);
+		Logger.log(`Signature: ${signature.toString('base64')}\n`);
 		return signature.toString('base64');
 	}
 
@@ -83,12 +84,12 @@ class BTCWallet extends Web3Wallet {
 	}
 
 	async switchNetwork(chainId: number): Promise<void> {
-		console.log('switchNetwork', chainId);
+		Logger.log('switchNetwork', chainId);
 		throw new Error('Method not implemented.');
 	}
 
 	async getSigner<T>(): Promise<T> {
-		console.log('getSigner');
+		Logger.log('getSigner');
 		throw new Error('Method not implemented.');
 	}
 

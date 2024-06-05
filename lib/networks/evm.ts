@@ -3,6 +3,7 @@ import { CHAIN_AVAILABLES, CHAIN_DEFAULT } from '../constant';
 import { generateMnemonic, validateMnemonic } from 'bip39';
 import { IWalletProvider } from '../interfaces/walllet-provider.interface';
 import { Web3Wallet } from './web3-wallet';
+import { Logger } from '../utils';
 // import cryptoRandomString from 'crypto-random-string';
 // const generatePrivateKey = () => {
 // 	// Générer une clé privée aléatoire de 32 octets
@@ -79,13 +80,13 @@ class EVMWallet extends Web3Wallet {
 			if (
 				contractAddress.toLowerCase() === constants.AddressZero.toLowerCase()
 			) {
-				console.log('[INFO] Sending native token');
+				Logger.log('[INFO] Sending native token');
 				tx = await wallet.sendTransaction({
 					to: destination,
 					value: amount
 				});
 			} else {
-				console.log('[INFO] Sending erc20 token');
+				Logger.log('[INFO] Sending erc20 token');
 				// ABI (Application Binary Interface) of the ERC20 token contract
 				const tokenABI = [
 					// Standard ERC20 functions
@@ -100,12 +101,12 @@ class EVMWallet extends Web3Wallet {
 				// Call the transfer function of the ERC20 token contract
 				tx = await tokenContract.transfer(destination, amount);
 			}
-			console.log('[INFO] Transaction Hash:', tx.hash);
+			Logger.log('[INFO] Transaction Hash:', tx.hash);
 			const receipt = await tx.wait();
-			console.log('[INFO] Transaction confirmed');
+			Logger.log('[INFO] Transaction confirmed');
 			return receipt;
 		} catch (error) {
-			console.error('[ERROR] _sendToken:', error);
+			Logger.error('[ERROR] _sendToken:', error);
 			throw error;
 		}
 	}
@@ -271,7 +272,7 @@ const connectWithExternalWallet = async (ops?: {
 		ops?.chainId || CHAIN_DEFAULT.id
 	);
 	const accounts = await web3Provider.send('eth_requestAccounts', []);
-	console.log(`[INFO] connectWithExternalWallet: `, accounts);
+	Logger.log(`[INFO] connectWithExternalWallet: `, accounts);
 	// set to default chain
 	try {
 		const chainIdAsHex = utils.hexValue(ops?.chainId || CHAIN_DEFAULT.id);
@@ -279,12 +280,12 @@ const connectWithExternalWallet = async (ops?: {
 			{ chainId: chainIdAsHex }
 		]);
 	} catch (error: unknown) {
-		console.log('[ERROR]', error);
+		Logger.log('[ERROR]', error);
 	}
 	const signer = web3Provider?.getSigner();
 	const address = await signer.getAddress();
 	const chainId = await signer.getChainId();
-	console.log('[INFO] connectWithExternalWallet', {
+	Logger.log('[INFO] connectWithExternalWallet', {
 		accounts,
 		address,
 		chainId

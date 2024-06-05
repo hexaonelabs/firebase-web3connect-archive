@@ -1,5 +1,6 @@
 import { FirebaseApp, initializeApp } from 'firebase/app';
 import { getDatabase, ref, set } from 'firebase/database';
+import { Logger } from '../utils';
 
 class BackupService {
 	private _app!: FirebaseApp;
@@ -8,7 +9,7 @@ class BackupService {
 	}
 
 	async backupSeed(uid: string, encryptedSeed: string) {
-		console.log('backupSeed', uid, encryptedSeed);
+		Logger.log('backupSeed', uid, encryptedSeed);
 		const db = getDatabase(this._app);
 		await set(ref(db, `users/${uid}/seed`), {
 			encryptedSeed,

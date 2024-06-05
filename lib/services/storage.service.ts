@@ -3,6 +3,7 @@ import { IStorageProvider } from '../interfaces/storage-provider.interface';
 import { IStorageService } from '../interfaces/storage-service.interface';
 import Crypto from '../providers/crypto/crypto';
 import { Environment } from '../providers/storage/local';
+import { Logger } from '../utils';
 
 class StorageService implements IStorageService {
 	private _storageProvider!: IStorageProvider;
@@ -41,7 +42,7 @@ class StorageService implements IStorageService {
 	}
 
 	public async executeBackup(requestBackup: boolean, secret?: string) {
-		console.log('[INFO] Execute Backup request:', { requestBackup, secret });
+		Logger.log('[INFO] Execute Backup request:', { requestBackup, secret });
 		const encriptedPrivateKey = await this._getBackup();
 		const withEncryption = requestBackup === true;
 		if (!secret && withEncryption) {
@@ -51,7 +52,7 @@ class StorageService implements IStorageService {
 			!withEncryption && secret
 				? await Crypto.decrypt(secret, encriptedPrivateKey)
 				: encriptedPrivateKey;
-		console.log('[INFO] Backup data:', {
+		Logger.log('[INFO] Backup data:', {
 			data,
 			withEncryption,
 			encriptedPrivateKey

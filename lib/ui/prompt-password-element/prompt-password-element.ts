@@ -1,4 +1,5 @@
 import { storageService } from '../../services/storage.service';
+import { Logger } from '../../utils';
 
 export const promptPasswordElement = async (
 	ref: HTMLElement,
@@ -13,7 +14,7 @@ export const promptPasswordElement = async (
 	const isCreating =
 		!(await storageService.isExistingPrivateKeyStored()) &&
 		isRequestPwd !== true;
-	console.log('isCreating', isCreating, isRequestPwd);
+	Logger.log('isCreating', isCreating, isRequestPwd);
 
 	const isValideInputs = (
 		inputPassword: HTMLInputElement,
