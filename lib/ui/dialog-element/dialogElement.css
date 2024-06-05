@@ -24,6 +24,8 @@
 
 @keyframes slide-in-up {
 	0% {
+		-webkit-tranform: translateY(100%);
+		-moz-tranform: translateY(100%);
 		transform: translateY(100%);
 	}
 }
@@ -73,6 +75,7 @@
 	text-rendering: optimizeLegibility;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
+	transition: all 0.125s ease-in-out;
 }
 
 :host dialog:not([open]) {
@@ -80,7 +83,8 @@
 	opacity: 0;
 }
 :host dialog[open] {
-	animation: slide-in-up 0.225s ease-in-out forwards;
+	opacity: 1;
+	/* animation: slide-in-up 0.225s ease-in-out forwards; */
 }
 
 :host dialog::backdrop {
