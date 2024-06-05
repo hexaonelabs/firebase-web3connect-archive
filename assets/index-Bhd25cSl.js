@@ -126,6 +126,8 @@
 
 @keyframes slide-in-up {
 	0% {
+		-webkit-tranform: translateY(100%);
+		-moz-tranform: translateY(100%);
 		transform: translateY(100%);
 	}
 }
