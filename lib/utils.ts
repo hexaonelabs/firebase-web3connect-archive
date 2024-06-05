@@ -16,7 +16,7 @@ export const parseApiKey = (hex: string) => {
 export const Logger = {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	log: (...args: any[]) => {
-		if (import.meta.env.MODE !== 'production') {
+		if (import.meta.env.MODE === 'production') {
 			return;
 		}
 		console.log(...args);
