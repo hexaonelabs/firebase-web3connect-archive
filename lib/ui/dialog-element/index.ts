@@ -4,7 +4,6 @@ import { HexaSigninDialogElement } from './dialogElement';
 import { KEYS, SigninMethod } from '../../constant';
 import {
 	authByImportPrivateKey,
-	authWithExternalWallet,
 	authWithGoogle,
 	authWithEmailPwd,
 	authByImportSeed
@@ -44,7 +43,7 @@ const addAndWaitUIEventsResult = (
 	dialogElement: FirebaseWeb3ConnectDialogElement
 ): Promise<
 	| {
-			uid: string;
+			uid?: string;
 			isAnonymous?: boolean;
 			password?: string;
 			authMethod: SigninMethod;
@@ -56,7 +55,7 @@ const addAndWaitUIEventsResult = (
 			resolve: (
 				value:
 					| {
-							uid: string;
+							uid?: string;
 							password?: string;
 							isAnonymous?: boolean;
 							authMethod: SigninMethod;
@@ -97,7 +96,7 @@ const addAndWaitUIEventsResult = (
 							skip,
 							withEncryption
 						});
-						await dialogElement.toggleSpinnerAsCheck();
+						// await dialogElement.toggleSpinnerAsCheck();
 						resolve({
 							uid,
 							password,
@@ -129,7 +128,7 @@ const addAndWaitUIEventsResult = (
 							skip,
 							withEncryption
 						});
-						await dialogElement.toggleSpinnerAsCheck();
+						// await dialogElement.toggleSpinnerAsCheck();
 						resolve({
 							uid,
 							password,
@@ -170,10 +169,10 @@ const addAndWaitUIEventsResult = (
 						Logger.log(`[INFO] Wallet type: `, walletType);
 						switch (walletType) {
 							case 'browser-extension': {
-								const { uid } = await authWithExternalWallet();
-								await dialogElement.toggleSpinnerAsCheck();
+								// const { uid } = await authWithExternalWallet();
+								// await dialogElement.toggleSpinnerAsCheck();
 								resolve({
-									uid,
+									uid: undefined,
 									isAnonymous: true,
 									authMethod: detail as SigninMethod
 								});

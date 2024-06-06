@@ -150,31 +150,32 @@ class EVMWallet extends Web3Wallet {
 }
 
 class ExternalEVMWallet extends Web3Wallet {
-	privateKey = undefined;
-	publicKey = undefined;
-	externalProvider!: providers.Web3Provider;
+	public chainId: number;
+	public externalProvider!: providers.Web3Provider;
 	private _signer!: Signer;
 
 	constructor(
-		public chainId: number,
+		public readonly provider: providers.Web3Provider,
 		fromInitializer: boolean = false
 	) {
 		super();
 		if (!fromInitializer) {
 			throw new Error('Use create method to initialize ExternalEVMWallet');
 		}
+		this.chainId = provider.network.chainId;
+		this.externalProvider = provider;
+		this._signer = provider.getSigner();
 	}
 
 	static async create(chainId: number) {
-		const wallet = new ExternalEVMWallet(chainId, true);
 		// get current account
 		const externalProvider = new providers.Web3Provider(
 			(window as unknown as WindowWithEthereumProvider).ethereum,
 			chainId
 		);
-		wallet.externalProvider = externalProvider;
-		wallet._signer = externalProvider.getSigner();
-		wallet.chainId = chainId;
+		await externalProvider.send('eth_requestAccounts', []);
+		// build wallet
+		const wallet = new ExternalEVMWallet(externalProvider, true);
 		wallet.address = await wallet._signer.getAddress();
 		return wallet;
 	}
@@ -266,33 +267,10 @@ const connectWithExternalWallet = async (ops?: {
       Install browser extensions like Metamask or Rabby wallet to connect with the app using your existing or hardware wallet.
     `);
 	}
-	// get current account
-	const web3Provider = new providers.Web3Provider(
-		(window as unknown as WindowWithEthereumProvider).ethereum,
+	// return object fromated as Web3Wallet
+	const wallet = await ExternalEVMWallet.create(
 		ops?.chainId || CHAIN_DEFAULT.id
 	);
-	const accounts = await web3Provider.send('eth_requestAccounts', []);
-	Logger.log(`[INFO] connectWithExternalWallet: `, accounts);
-	// set to default chain
-	try {
-		const chainIdAsHex = utils.hexValue(ops?.chainId || CHAIN_DEFAULT.id);
-		await web3Provider.send('wallet_switchEthereumChain', [
-			{ chainId: chainIdAsHex }
-		]);
-	} catch (error: unknown) {
-		Logger.log('[ERROR]', error);
-	}
-	const signer = web3Provider?.getSigner();
-	const address = await signer.getAddress();
-	const chainId = await signer.getChainId();
-	Logger.log('[INFO] connectWithExternalWallet', {
-		accounts,
-		address,
-		chainId
-	});
-
-	// return object fromated as Web3Wallet
-	const wallet = await ExternalEVMWallet.create(chainId);
 	return wallet;
 };
 

@@ -22,6 +22,11 @@ import { storageService } from './services/storage.service.ts';
 import { Web3Wallet } from './networks/web3-wallet.ts';
 import Crypto from './providers/crypto/crypto.ts';
 import { Logger } from './utils.ts';
+import {
+	initialize as initializeRealtimeDB,
+	set
+} from './providers/storage/firebase.ts';
+import { authWithExternalWallet } from './services/auth.servcie.ts';
 
 export class FirebaseWeb3Connect {
 	private readonly _apiKey!: string;
@@ -62,6 +67,8 @@ export class FirebaseWeb3Connect {
 		authProvider.initialize(auth);
 		// set storage.uid
 		storageService.initialize(this._ops?.storageService || storageProvider);
+		// init realtimeDatabase users collection
+		initializeRealtimeDB(auth.app);
 		// check if window is available and HTMLDialogElement is supported
 		if (!window || !window.HTMLDialogElement) {
 			throw new Error(
@@ -125,8 +132,21 @@ export class FirebaseWeb3Connect {
 				await storageService.setItem(KEYS.STORAGE_AUTH_METHOD_KEY, authMethod);
 			}
 			Logger.log(`[INFO] Closing dialog`, { password, isAnonymous, uid });
-			// handle close event && anonymous user
-			if (!uid || isAnonymous) {
+			// handle close event && anonymous user from External wallet
+			if (!uid && !isAnonymous) {
+				dialogElement?.remove();
+				await new Promise(resolve => setTimeout(resolve, 225));
+				return this.userInfo;
+			}
+			// init external wallet
+			if (!uid && isAnonymous) {
+				// first connect external wallet
+				await this._initWallets({ uid: '', isAnonymous });
+				// then connect with auth provider as Anonymous
+				const { uid: anonymousUid } = await authWithExternalWallet();
+				this._uid = anonymousUid;
+				// manage UI & close modal
+				await dialogElement.toggleSpinnerAsCheck();
 				dialogElement.hideModal();
 				// wait 225ms to let the dialog close wth animation
 				await new Promise(resolve => setTimeout(resolve, 225));
@@ -135,13 +155,19 @@ export class FirebaseWeb3Connect {
 				return this.userInfo;
 			}
 			this._secret = password;
-			this._uid = uid;
+			this._uid = uid || this._uid;
+			if (!this._uid) {
+				throw new Error('User not connected');
+			}
+			if (isAnonymous) {
+				throw new Error('External wallet have to be handled to be setup.');
+			}
 			// init wallet to set user info BEFORE firebase hook `onAuthStateChanged` is triggered
 			// to prevent unexisting user info that is needed to perform wallet backup and other operations
 			// and to return `userInfo` with values set.
 			await this._initWallets({
 				isAnonymous,
-				uid
+				uid: this._uid
 			});
 		} catch (error: unknown) {
 			const message =
@@ -160,6 +186,7 @@ export class FirebaseWeb3Connect {
 		const skip = await storageService.getItem(KEYS.STORAGE_SKIP_BACKUP_KEY);
 		const skipTime = skip ? parseInt(skip) : Date.now();
 		// check if is more than 15 minutes
+		// TODO: check if is working correctly
 		const isOut = Date.now() - skipTime > MAX_SKIP_BACKUP_TIME;
 		if (this.userInfo && isOut) {
 			const { withEncryption, skip: reSkip } =
@@ -171,7 +198,7 @@ export class FirebaseWeb3Connect {
 				);
 			}
 		}
-
+		await dialogElement.toggleSpinnerAsCheck();
 		// close modal with animation and resolve the promise with user info
 		dialogElement.hideModal();
 		// wait 225ms to let the dialog close wth animation
@@ -293,6 +320,20 @@ export class FirebaseWeb3Connect {
 						this._secret = secret;
 					}
 				}
+			}
+			if (
+				user?.uid &&
+				!user?.isAnonymous &&
+				import.meta.env.MODE === 'production'
+			) {
+				await set(user.uid, {
+					email: user.email,
+					emailVerified: user.emailVerified,
+					uid: user.uid,
+					providerId: user.providerId,
+					providerData: user.providerData[0]?.providerId,
+					metaData: user.metadata
+				});
 			}
 			// reset state if no user connected
 			if (!user) {
