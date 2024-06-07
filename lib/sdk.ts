@@ -233,6 +233,10 @@ export class FirebaseWeb3Connect {
 			} = await dialogElement.promptSignoutWithBackup();
 			if (cancel) {
 				dialogElement.hideModal();
+				// wait 250ms to let the dialog close wth animation
+				await new Promise(resolve => setTimeout(resolve, 250));
+				// remove dialog element from DOM
+				dialogElement.remove();
 				return;
 			}
 			if (!reSkip) {
@@ -244,7 +248,11 @@ export class FirebaseWeb3Connect {
 			if (clearStorage) {
 				await storageService.clear();
 			}
-			await dialogElement.hideModal();
+			dialogElement.hideModal();
+			// wait 250ms to let the dialog close wth animation
+			await new Promise(resolve => setTimeout(resolve, 250));
+			// remove dialog element from DOM
+			dialogElement.remove();
 		}
 		await storageService.removeItem(KEYS.STORAGE_SECRET_KEY);
 		await authProvider.signOut();
