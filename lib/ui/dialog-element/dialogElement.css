@@ -24,12 +24,9 @@
 
 @keyframes slide-in-up {
 	0% {
+		-webkit-tranform: translateY(100%);
+		-moz-tranform: translateY(100%);
 		transform: translateY(100%);
-	}
-}
-@keyframes scale-down {
-	to {
-		transform: scale(0.35);
 	}
 }
 
@@ -39,6 +36,7 @@
 
 :host {
 	--animation-scale-down: scale-down 0.125s var(--ease);
+	--animation-slide-in-down: slide-in-down 0.125s ease-in-out;
 	--animation-slide-in-up: slide-in-up 0.125s var(--ease);
 	--ease: cubic-bezier(0.25, 0, 0.3, 1);
 	--ease-elastic-in-out: cubic-bezier(0.5, -0.5, 0.1, 1.5);
@@ -77,8 +75,7 @@
 	text-rendering: optimizeLegibility;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
-	animation: var(--animation-scale-down) forwards;
-	animation-timing-function: var(--ease-squish);
+	transition: all 0.125s ease-in-out;
 }
 
 :host dialog:not([open]) {
@@ -86,13 +83,12 @@
 	opacity: 0;
 }
 :host dialog[open] {
-	animation: slide-in-up 0.225s var(--ease) forwards;
+	opacity: 1;
+	/* animation: slide-in-up 0.225s ease-in-out forwards; */
 }
 
 :host dialog::backdrop {
 	background-color: rgba(0, 0, 0, 0.2);
-	/* -webkit-backdrop-filter: blur(1px);
-	backdrop-filter: blur(1px); */
 }
 
 :host dialog form {

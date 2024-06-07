@@ -3,6 +3,7 @@ import authProvider from '../providers/auth/firebase';
 import Crypto from '../providers/crypto/crypto';
 import { KEYS } from '../constant';
 import { storageService } from './storage.service';
+import { Logger } from '../utils';
 
 export const authWithGoogle = async (ops: {
 	password: string;
@@ -48,7 +49,7 @@ export const authWithGoogle = async (ops: {
 				case (code === 'auth/google-account-already-in-use' ||
 					message === 'auth/google-account-already-in-use') &&
 					!privateKey: {
-					console.log(`[ERROR] Signin Step: ${code || message}`);
+					Logger.log(`[ERROR] Signin Step: ${code || message}`);
 					// if email already in use & no ptivatekey, ask to import Wallet Backup file instead
 					storageService.clear();
 					localStorage.removeItem(KEYS.STORAGE_BACKUP_KEY);
@@ -111,13 +112,13 @@ export const authWithEmailPwd = async (ops: {
 				}
 				case code === 'auth/weak-password':
 				case code === 'auth/invalid-email': {
-					console.error(`[ERROR] Signin Step: ${code}: ${message}`);
+					Logger.error(`[ERROR] Signin Step: ${code}: ${message}`);
 					storageService.clear();
 					localStorage.removeItem(KEYS.STORAGE_BACKUP_KEY);
 					break;
 				}
 				case code === 'auth/invalid-credential': {
-					console.error(`[ERROR] Signin Step: ${code}: ${message}`);
+					Logger.error(`[ERROR] Signin Step: ${code}: ${message}`);
 					storageService.clear();
 					localStorage.removeItem(KEYS.STORAGE_BACKUP_KEY);
 					throw new Error(
@@ -131,7 +132,7 @@ export const authWithEmailPwd = async (ops: {
 };
 
 export const authWithExternalWallet = async () => {
-	console.log('authWithExternalWallet');
+	Logger.log('authWithExternalWallet');
 	const {
 		user: { uid }
 	} = await authProvider.signInAsAnonymous();

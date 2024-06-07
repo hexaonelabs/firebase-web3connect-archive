@@ -11,6 +11,7 @@ import { DialogUIOptions } from '../../interfaces/sdk.interface';
 import { FirebaseWeb3ConnectDialogElement } from '../../interfaces/dialog-element.interface';
 import { storageService } from '../../services/storage.service';
 import { promptSignoutElement } from '../prompt-signout-element/prompt-signout-element';
+import { Logger } from '../../utils';
 
 // export webcomponent with shadowdom
 export class HexaSigninDialogElement
@@ -42,7 +43,7 @@ export class HexaSigninDialogElement
 			integrator,
 			enabledSigninMethods
 		};
-		console.log(`[INFO] ops: `, this.ops);
+		Logger.log(`[INFO] ops: `, this.ops);
 
 		// check if shadow dom is initialized and empty
 		if (this.shadowRoot?.innerHTML === '') {
@@ -95,7 +96,7 @@ export class HexaSigninDialogElement
 			template.content.querySelector('.or')?.remove();
 		}
 		if (this.ops?.logoUrl) {
-			console.log(`[INFO] Logo URL: `, this.ops.logoUrl);
+			Logger.log(`[INFO] Logo URL: `, this.ops.logoUrl);
 			(template.content.querySelector('#logo') as HTMLElement).innerHTML = `
 				<img src="${this.ops.logoUrl}" alt="logo" />	
 			`;

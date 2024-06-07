@@ -22,6 +22,7 @@ import {
 } from 'firebase/auth';
 import { IAuthProvider } from '../../interfaces/auth-provider.interface';
 import { KEYS } from '../../constant';
+import { Logger } from '../../utils';
 
 let auth!: Auth;
 
@@ -45,7 +46,7 @@ const sendLinkToEmail = async (email: string) => {
 	const url = `${window.location.origin}/?${KEYS.URL_QUERYPARAM_FINISH_SIGNUP}=true`;
 	const actionCodeSettings = {
 		// URL you want to redirect back to. The domain (www.example.com) for this
-		// URL must be in the authorized domains list in the Firebase Console.
+		// URL must be in the authorized domains list in the Firebase Logger.
 		url,
 		// This must be true.
 		handleCodeInApp: true
@@ -65,7 +66,7 @@ const signInWithLink = async () => {
 	if (!isSignInWithEmailLink(auth, window.location.href)) {
 		return undefined;
 	}
-	console.log(
+	Logger.log(
 		'[INFO] FirebaseWeb3Connect - signInWithLink: ',
 		window.location.href
 	);

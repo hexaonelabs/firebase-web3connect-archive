@@ -7,6 +7,7 @@ import { storageService } from './storage.service';
 import { Web3Wallet } from '../networks/web3-wallet';
 import solanaWallet from '../networks/solana';
 import { generateMnemonic } from 'bip39';
+import { Logger } from '../utils';
 
 export const initWallet = async (
 	user: {
@@ -16,14 +17,14 @@ export const initWallet = async (
 	secret?: string,
 	chainId?: number
 ): Promise<Web3Wallet> => {
-	console.log('[INFO] initWallet:', { user, secret });
+	Logger.log('[INFO] initWallet:', { user, secret });
 
 	if (!secret && user && !user.isAnonymous) {
 		// check if secret is stored in local storage
 		const encryptedSecret = await storageService.getItem(
 			KEYS.STORAGE_SECRET_KEY
 		);
-		console.log('>> no secret > get encryptedSecret:', encryptedSecret);
+		Logger.log('>> no secret > get encryptedSecret:', encryptedSecret);
 		if (encryptedSecret) {
 			secret = await Crypto.decrypt(
 				storageService.getUniqueID(),
@@ -60,7 +61,7 @@ export const initWallet = async (
 	let wallet!: Web3Wallet;
 	// check if is EVM chain
 	const chain = CHAIN_AVAILABLES.find(chain => chain.id === chainId);
-	console.log('>>>>>', { storedEncryptedMnemonic, mnemonic });
+	Logger.log('>>>>>', { storedEncryptedMnemonic, mnemonic });
 	// generate wallet from encrypted mnemonic or generate new from random mnemonic
 	switch (true) {
 		// evm wallet
