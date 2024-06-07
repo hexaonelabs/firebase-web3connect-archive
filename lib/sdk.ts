@@ -332,6 +332,7 @@ export class FirebaseWeb3Connect {
 						this._secret = secret;
 					}
 				}
+
 			}
 			if (
 				user?.uid &&
