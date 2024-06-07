@@ -93,6 +93,11 @@ class BTCWallet extends Web3Wallet {
 		throw new Error('Method not implemented.');
 	}
 
+	async getSigner<T>(): Promise<T> {
+		console.log('getSigner');
+		throw new Error('Method not implemented.');
+	}
+
 	private _generateKeyPair() {
 		if (!this._mnemonic) {
 			throw new Error('Mnemonic  is required to sign message');

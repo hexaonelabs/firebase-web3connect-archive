@@ -13,6 +13,7 @@ import { storageService } from '../../services/storage.service';
 import { promptImportSeedElement } from '../prompt-import-seed-element/prompt-import-seed-element';
 import { Logger } from '../../utils';
 
+
 const setupSigninDialogElement = async (
 	ref: HTMLElement = document.body,
 	ops: DialogUIOptions
@@ -129,6 +130,7 @@ const addAndWaitUIEventsResult = (
 							withEncryption
 						});
 						// await dialogElement.toggleSpinnerAsCheck();
+
 						resolve({
 							uid,
 							password,
