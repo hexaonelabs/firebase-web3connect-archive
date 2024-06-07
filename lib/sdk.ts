@@ -134,11 +134,14 @@ export class FirebaseWeb3Connect {
 			Logger.log(`[INFO] Closing dialog`, { password, isAnonymous, uid });
 			// handle close event && anonymous user from External wallet
 			if (!uid && !isAnonymous) {
-				dialogElement?.remove();
+				dialogElement.hideModal();
 				await new Promise(resolve => setTimeout(resolve, 225));
+				dialogElement.remove();
 				return this.userInfo;
 			}
-			// init external wallet
+			// init external wallet here,
+			// all other wallet will be initialized after user connection
+			// using the `onAuthStateChanged` hook
 			if (!uid && isAnonymous) {
 				// first connect external wallet
 				await this._initWallets({ uid: '', isAnonymous });
@@ -154,6 +157,7 @@ export class FirebaseWeb3Connect {
 				dialogElement?.remove();
 				return this.userInfo;
 			}
+			// handle user connection
 			this._secret = password;
 			this._uid = uid || this._uid;
 			if (!this._uid) {
