@@ -36,6 +36,7 @@ const signinWithGoogle = async (privateKey?: string) => {
 			provider,
 			browserPopupRedirectResolver
 		);
+		alert('DEBUG: uuid - ' + credential.user.uid);
 		credential.user;
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	} catch (error: any) {
