@@ -28,12 +28,24 @@ let auth!: Auth;
 
 const signinWithGoogle = async (privateKey?: string) => {
 	// Initialize Firebase Google Auth
-	const provider = new GoogleAuthProvider();
-	const credential = await signInWithPopup(
-		auth,
-		provider,
-		browserPopupRedirectResolver
-	);
+	let credential;
+	try {
+		const provider = new GoogleAuthProvider();
+		credential = await signInWithPopup(
+			auth,
+			provider,
+			browserPopupRedirectResolver
+		);
+		credential.user;
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	} catch (error: any) {
+		const message = error.message || error.code || 'Signin with Google failed';
+		alert('DEBUG: ' + message);
+		throw new Error(message);
+	}
+	if (!credential) {
+		throw new Error('Credential not found');
+	}
 	const { isNewUser } = getAdditionalUserInfo(credential) || {};
 	if (!isNewUser && !privateKey) {
 		await signOut();
