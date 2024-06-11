@@ -16,9 +16,9 @@ import {
 	browserPopupRedirectResolver,
 	signInWithEmailAndPassword,
 	createUserWithEmailAndPassword,
-	sendEmailVerification,
+	sendEmailVerification
 	// beforeAuthStateChanged,
-	getAdditionalUserInfo
+	// getAdditionalUserInfo
 } from 'firebase/auth';
 import { IAuthProvider } from '../../interfaces/auth-provider.interface';
 import { KEYS } from '../../constant';
@@ -27,31 +27,22 @@ import { Logger } from '../../utils';
 let auth!: Auth;
 
 const signinWithGoogle = async (privateKey?: string) => {
-	// Initialize Firebase Google Auth
-	let credential;
-	try {
-		const provider = new GoogleAuthProvider();
-		credential = await signInWithPopup(
-			auth,
-			provider,
-			browserPopupRedirectResolver
-		);
-		// alert('DEBUG: uuid - ' + credential.user.uid);
-		credential.user;
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} catch (error: any) {
-		const message = error.message || error.code || 'Signin with Google failed';
-		// alert('DEBUG: ' + message);
-		throw new Error(message);
-	}
+	// Initialize Firebase Google Aut
+	const provider = new GoogleAuthProvider();
+	const credential = await signInWithPopup(
+		auth,
+		provider,
+		browserPopupRedirectResolver
+	);
 	if (!credential) {
 		throw new Error('Credential not found');
 	}
-	const { isNewUser } = getAdditionalUserInfo(credential) || {};
-	if (!isNewUser && !privateKey) {
-		await signOut();
-		throw new Error(`auth/google-account-already-in-use`);
-	}
+	// TODO: implement this
+	// const { isNewUser } = getAdditionalUserInfo(credential) || {};
+	// if (!isNewUser && !privateKey) {
+	// 	await signOut();
+	// 	throw new Error(`auth/google-account-already-in-use`);
+	// }
 	return credential.user;
 };
 
@@ -134,7 +125,6 @@ const signInWithEmailPwd = async (
 		}
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	} catch (error: any) {
-		// only error with { code: string } type
 		if (error?.code === 'auth/email-already-in-use' && privateKey) {
 			const credential = await signInWithEmailAndPassword(
 				auth,
@@ -144,7 +134,18 @@ const signInWithEmailPwd = async (
 			user = credential.user;
 			return user;
 		}
-		throw error;
+
+		// TODO: implement this to prevent user from creating new account if email already in use
+		// if (error?.code === 'auth/email-already-in-use' && privateKey) {
+		// 	const credential = await signInWithEmailAndPassword(
+		// 		auth,
+		// 		email,
+		// 		password
+		// 	);
+		// 	user = credential.user;
+		// 	return user;
+		// }
+		// throw error;
 	}
 	if (!user) {
 		throw new Error('User not found');

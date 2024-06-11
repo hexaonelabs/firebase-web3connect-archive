@@ -50,18 +50,28 @@ export const authWithGoogle = async (ops: {
 				case (code === 'auth/google-account-already-in-use' ||
 					message === 'auth/google-account-already-in-use') &&
 					!privateKey: {
+					// do not prevent user to signin if account already in use and return user object
+					// this will allow user to signin with same account on multiple devices
 					Logger.log(`[ERROR] Signin Step: ${code || message}`);
-					// if email already in use & no ptivatekey, ask to import Wallet Backup file instead
-					storageService.clear();
-					localStorage.removeItem(KEYS.STORAGE_BACKUP_KEY);
-					await authProvider.signOut();
-					throw new Error(
-						`This Google Account is already used and connected to other device. Import your private key instead using: "Connect Wallet -> Import Wallet".`
-					);
+					const user = await authProvider.getCurrentUserAuth();
+					if (!user) {
+						throw new Error('User not found');
+					}
+					return user;
+
+					// TODO: implement this logic to prevent multiple account with same email
+					// Logger.log(`[ERROR] Signin Step: ${code || message}`);
+					// // if email already in use & no ptivatekey, ask to import Wallet Backup file instead
+					// storageService.clear();
+					// localStorage.removeItem(KEYS.STORAGE_BACKUP_KEY);
+					// throw new Error(
+					// 	`This Google Account is already used and connected to other device. Import your private key instead using: "Connect Wallet -> Import Wallet".`
+					// );
 				}
 			}
 			throw error;
 		});
+	console.log('result', { result });
 	return result;
 };
 
