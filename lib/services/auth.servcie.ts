@@ -45,6 +45,7 @@ export const authWithGoogle = async (ops: {
 		.signinWithGoogle(privateKey || undefined)
 		.catch(async (error: { code?: string; message?: string }) => {
 			const { code = '', message = '' } = error;
+			alert(`DEBUG: ${code} - ${message}`);
 			switch (true) {
 				case (code === 'auth/google-account-already-in-use' ||
 					message === 'auth/google-account-already-in-use') &&
