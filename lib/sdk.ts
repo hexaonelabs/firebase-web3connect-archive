@@ -285,6 +285,8 @@ export class FirebaseWeb3Connect {
 				);
 			}
 			dialogElement.hideModal();
+			await new Promise(resolve => setTimeout(resolve, 125));
+			dialogElement.remove();
 		} else {
 			throw new Error('Backup wallet without UI is not implemented yet');
 		}
@@ -332,7 +334,6 @@ export class FirebaseWeb3Connect {
 						this._secret = secret;
 					}
 				}
-
 			}
 			if (
 				user?.uid &&
