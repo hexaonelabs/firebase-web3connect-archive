@@ -36,12 +36,12 @@ const signinWithGoogle = async (privateKey?: string) => {
 			provider,
 			browserPopupRedirectResolver
 		);
-		alert('DEBUG: uuid - ' + credential.user.uid);
+		// alert('DEBUG: uuid - ' + credential.user.uid);
 		credential.user;
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	} catch (error: any) {
 		const message = error.message || error.code || 'Signin with Google failed';
-		alert('DEBUG: ' + message);
+		// alert('DEBUG: ' + message);
 		throw new Error(message);
 	}
 	if (!credential) {
