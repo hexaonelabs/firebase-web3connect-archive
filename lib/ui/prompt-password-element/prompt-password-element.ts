@@ -1,5 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { storageService } from '../../services/storage.service';
-import { Logger } from '../../utils';
 
 export const promptPasswordElement = async (
 	ref: HTMLElement,
@@ -7,27 +7,37 @@ export const promptPasswordElement = async (
 		requestPwd?: boolean;
 	}
 ): Promise<string> => {
-	const minPasswordLength = 4;
+	const minPasswordLength = 6;
 	const maxPasswordLength = 32;
 
 	const isRequestPwd = ops?.requestPwd || false;
 	const isCreating =
 		!(await storageService.isExistingPrivateKeyStored()) &&
 		isRequestPwd !== true;
-	Logger.log('isCreating', isCreating, isRequestPwd);
 
-	const isValideInputs = (
-		inputPassword: HTMLInputElement,
-		inputConfirme?: HTMLInputElement
-	) => {
-		if (!inputConfirme) {
-			return inputPassword.value.length > 0;
+	const isValideInputs = (value: string, confirmeValue?: string) => {
+		if (!confirmeValue) {
+			return (
+				value.length > minPasswordLength - 1 &&
+				value.length < maxPasswordLength - 1
+			);
 		}
 		return (
-			inputPassword.value.length > 0 &&
-			inputConfirme.value.length > 0 &&
-			inputPassword.value === inputConfirme.value
+			value.length >= minPasswordLength - 1 &&
+			confirmeValue?.length > minPasswordLength - 1 &&
+			value === confirmeValue &&
+			value.length < maxPasswordLength - 1
 		);
+	};
+
+	const focusNextInput = (input: HTMLInputElement) => {
+		// focus next input
+		const next = input.nextElementSibling as HTMLInputElement | null;
+		if (next) {
+			next.focus();
+		} else {
+			input.blur();
+		}
 	};
 
 	return new Promise(resolve => {
@@ -61,6 +71,10 @@ export const promptPasswordElement = async (
         font-size: 1em;
         text-align: center;
       }
+			.prompt__input.single {
+				width: 45px;
+				display: inline;
+			}
       .prompt__message { 
         margin-bottom: 1.5rem;
       }
@@ -74,57 +88,41 @@ export const promptPasswordElement = async (
 
     </style>
       <div class="prompt__message">
-				${isCreating ? '<h4>Create a new Wallet</h4>' : '<h4>Connect you Wallet</h4>'}
+				${isCreating ? '<h4>Create a new Wallet</h4>' : '<h4>Connect to your Wallet</h4>'}
         <p><b>${
 					isCreating ? 'Protect your Wallet with a password' : 'Welcome back!'
 				}</b></p>
         <p>
           ${
 						isCreating
-							? `The password you enter encrypts your private key and gives access to your funds. Please store your password in a safe place. We don’t keep your information and can’t restore it.`
-							: `Unlock your wallet with your password.`
+							? `The password you enter encrypts your private key & gives access to your funds. Please store your password in a safe place. We don’t keep your information & can’t restore it.`
+							: `Unlock with your password.`
 					}
         </p>
       </div>
-      <input 
-        class="prompt__input password" 
-        name="password"
-        type="password" 
-        minLength="${minPasswordLength}"
-        maxLength="${maxPasswordLength}"
-        autocomplet="${isCreating ? 'new-password' : 'current-password'}"
-        placeholder="password" />
-      ${
-				isCreating
-					? `
-            <input 
-              class="prompt__input confirme" 
-              name="confirme"
-              type="password" 
-              minLength="${minPasswordLength}"
-              maxLength="${maxPasswordLength}"
-              autocomplet="new-password"
-              placeholder="confirme password" />
-              `
-					: ``
-			}
+			<div id="inputs">
+					<input class="prompt__input password single" type="password" maxLength="1" inputmode="numeric" />
+					<input class="prompt__input password single" type="password" maxLength="1" inputmode="numeric" />
+					<input class="prompt__input password single" type="password" maxLength="1" inputmode="numeric" />
+					<input class="prompt__input password single" type="password" maxLength="1" inputmode="numeric" />
+					<input class="prompt__input password single" type="password" maxLength="1" inputmode="numeric" />
+					<input class="prompt__input password single" type="password" maxLength="1" inputmode="numeric" />
+			</div>
       <button disabled class="prompt__button">OK</button>
     `;
 		container.innerHTML = html;
 		ref.after(container);
 		ref.style.display = 'none';
 
-		const inputPassword = container.querySelector(
-			'.prompt__input.password'
-		) as HTMLInputElement;
-		const inputConfirme = container.querySelector(
-			'.prompt__input.confirme'
-		) as HTMLInputElement;
+		const inputs =
+			([
+				...container.querySelectorAll('.prompt__input.single')
+			] as HTMLInputElement[]) || [];
 		const button = container.querySelector(
 			'.prompt__button'
 		) as HTMLButtonElement;
 		button.addEventListener('click', () => {
-			resolve(inputPassword.value);
+			resolve(inputs.map(i => i.value).join(''));
 			container.remove();
 			// prevent flash ui. ref will be hiden to display backup step
 			// if is creating wallet. This is why we dont switch to display block
@@ -134,14 +132,20 @@ export const promptPasswordElement = async (
 		});
 
 		// manage validation of input to enable button
-		inputPassword.addEventListener('input', () => {
-			const isValid = isValideInputs(inputPassword, inputConfirme);
-			button.disabled = !isValid;
-		});
-
-		if (isCreating) {
-			inputConfirme.addEventListener('input', () => {
-				const isValid = isValideInputs(inputPassword, inputConfirme);
+		for (let index = 0; index < inputs.length; index++) {
+			const input = inputs[index];
+			input.addEventListener('focus', e => {
+				// clear input value on focus and prevent autofill & preventDefault
+				e.preventDefault();
+				input.value = '';
+				const isValid = isValideInputs(inputs.map(i => i.value).join(''));
+				button.disabled = !isValid;
+			});
+			input.addEventListener('input', () => {
+				if (input.value !== '' && input.value.length === 1) {
+					focusNextInput(input);
+				}
+				const isValid = isValideInputs(inputs.map(i => i.value).join(''));
 				button.disabled = !isValid;
 			});
 		}
