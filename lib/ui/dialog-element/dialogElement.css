@@ -215,6 +215,7 @@ a {
 	position: absolute;
 	right: 16px;
 	top: 16px;
+	padding-top: env(safe-area-inset-top);
 }
 
 @media (max-width: 600px) {
@@ -230,5 +231,12 @@ a {
 		align-items: start;
 		justify-content: center;
 		overflow-y: scroll;
+	}
+}
+
+/* iOS Header padding on Standalone mode */
+@media (max-width: 600px) and (display-mode: standalone) {
+	:host dialog {
+		padding-top: env(safe-area-inset-top);
 	}
 }
