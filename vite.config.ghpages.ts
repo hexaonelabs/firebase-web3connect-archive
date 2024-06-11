@@ -4,9 +4,16 @@ import inject from '@rollup/plugin-inject';
 import wasm from 'vite-plugin-wasm';
 import topLevelAwait from 'vite-plugin-top-level-await';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-	plugins: [nodePolyfills(), wasm(), topLevelAwait(), libInjectCss()],
+	plugins: [
+		nodePolyfills(),
+		wasm(),
+		topLevelAwait(),
+		libInjectCss(),
+		VitePWA()
+	],
 	base: '/firebase-web3connect/',
 	build: {
 		target: 'esnext',
