@@ -60,5 +60,16 @@ export const promptToDownloadElement = async (
 			container.remove();
 			ref.style.display = 'block';
 		});
+
+		// manage dialog close btn
+		const mainCloseBtn = ref.closest('dialog')?.querySelector('#cancel');
+		if (mainCloseBtn) {
+			mainCloseBtn.addEventListener('click', e => {
+				e.preventDefault();
+				resolve({ skip: true });
+				container.remove();
+				ref.style.display = 'block';
+			});
+		}
 	});
 };

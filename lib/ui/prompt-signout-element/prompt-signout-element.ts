@@ -28,7 +28,7 @@ export const promptSignoutElement = async (
         Signout
       </h3>
       <p class="information">
-        You are about to signout from your wallet and your Private Key still remains encrypted on this device unless you remove it.
+        You are about to signout from your Wallet and your Private Key still remains encrypted on this device unless you remove it.
       </p>
       ${CheckboxElement({
 				label: 'Download encrypted backup file',
@@ -75,5 +75,16 @@ export const promptSignoutElement = async (
 			container.remove();
 			ref.style.display = 'block';
 		});
+
+		// manage dialog close btn
+		const mainCloseBtn = ref.closest('dialog')?.querySelector('#cancel');
+		if (mainCloseBtn) {
+			mainCloseBtn.addEventListener('click', e => {
+				e.preventDefault();
+				resolve({ cancel: true });
+				container.remove();
+				ref.style.display = 'block';
+			});
+		}
 	});
 };
