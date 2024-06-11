@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/firebase-web3connect/sw.js', { scope: '/firebase-web3connect/' })})}
