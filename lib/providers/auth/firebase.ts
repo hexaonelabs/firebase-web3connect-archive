@@ -16,7 +16,8 @@ import {
 	browserPopupRedirectResolver,
 	signInWithEmailAndPassword,
 	createUserWithEmailAndPassword,
-	sendEmailVerification
+	sendEmailVerification,
+	getAdditionalUserInfo
 	// beforeAuthStateChanged,
 	// getAdditionalUserInfo
 } from 'firebase/auth';
@@ -38,11 +39,11 @@ const signinWithGoogle = async (privateKey?: string) => {
 		throw new Error('Credential not found');
 	}
 	// TODO: implement this
-	// const { isNewUser } = getAdditionalUserInfo(credential) || {};
-	// if (!isNewUser && !privateKey) {
-	// 	await signOut();
-	// 	throw new Error(`auth/google-account-already-in-use`);
-	// }
+	const { isNewUser } = getAdditionalUserInfo(credential) || {};
+	if (!isNewUser && !privateKey) {
+		// await signOut();
+		// throw new Error(`auth/google-account-already-in-use`);
+	}
 	return credential.user;
 };
 
