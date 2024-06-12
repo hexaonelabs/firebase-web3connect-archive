@@ -126,7 +126,10 @@ const signInWithEmailPwd = async (email: string, password: string) => {
 			code: error?.code,
 			message: error?.message
 		});
-		if (error?.code === 'auth/email-already-in-use') {
+		if (
+			error?.code === 'auth/email-already-in-use' ||
+			error?.code === 'auth/network-request-failed'
+		) {
 			const credential = await signInWithEmailAndPassword(
 				auth,
 				email,
