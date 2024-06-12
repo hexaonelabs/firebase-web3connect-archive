@@ -122,6 +122,10 @@ const signInWithEmailPwd = async (email: string, password: string) => {
 		}
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	} catch (error: any) {
+		console.log('[ERROR] auth with email pwd: ', error, {
+			code: error?.code,
+			message: error?.message
+		});
 		if (error?.code === 'auth/email-already-in-use') {
 			const credential = await signInWithEmailAndPassword(
 				auth,
