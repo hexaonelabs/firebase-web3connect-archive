@@ -107,11 +107,7 @@ const signInAsAnonymous = async () => {
 	return await signInAnonymously(auth);
 };
 
-const signInWithEmailPwd = async (
-	email: string,
-	password: string,
-	privateKey?: string
-) => {
+const signInWithEmailPwd = async (email: string, password: string) => {
 	let user!: User;
 	try {
 		// Create user with email and password
@@ -126,7 +122,7 @@ const signInWithEmailPwd = async (
 		}
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	} catch (error: any) {
-		if (error?.code === 'auth/email-already-in-use' && privateKey) {
+		if (error?.code === 'auth/email-already-in-use') {
 			const credential = await signInWithEmailAndPassword(
 				auth,
 				email,
@@ -146,7 +142,7 @@ const signInWithEmailPwd = async (
 		// 	user = credential.user;
 		// 	return user;
 		// }
-		// throw error;
+		throw error;
 	}
 	if (!user) {
 		throw new Error('User not found');
