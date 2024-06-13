@@ -179,9 +179,7 @@ const getCurrentUserAuth = async () => {
 
 const updateUserAndTriggerStateChange = async () => {
 	const user = auth.currentUser;
-	if (!user) {
-		throw new Error('User not found');
-	}
+	// update if user is connected
 	await user?.getIdToken(true);
 };
 

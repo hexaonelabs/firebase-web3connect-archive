@@ -1,5 +1,9 @@
-export const CheckboxElement = (ops?: { label: string; id: string }) => {
-	const { label, id } = ops || {};
+export const CheckboxElement = (ops?: {
+	label: string;
+	id: string;
+	checked?: boolean;
+}) => {
+	const { label, id, checked = false } = ops || {};
 	return `
     <style>
     
@@ -47,7 +51,7 @@ export const CheckboxElement = (ops?: { label: string; id: string }) => {
       }
     </style>
     <div class="checkbox__container">
-      <input type="checkbox" id="${id}" name="${id}" checked="true">
+      <input type="checkbox" id="${id}" name="${id}" ${checked === true ? `checked="true"` : null}>
       <label for="${id}">${label}</label>
     </div>
   `;

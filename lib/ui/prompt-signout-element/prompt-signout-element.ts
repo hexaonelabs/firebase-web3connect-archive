@@ -32,7 +32,8 @@ export const promptSignoutElement = async (
       </p>
       ${CheckboxElement({
 				label: 'Download encrypted backup file',
-				id: 'toggle__download'
+				id: 'toggle__download',
+				checked: true
 			})}
       ${CheckboxElement({
 				label: 'Remove data from device',
