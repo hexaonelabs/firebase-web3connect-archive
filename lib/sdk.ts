@@ -242,6 +242,7 @@ export class FirebaseWeb3Connect {
 			}
 			if (clearStorage) {
 				await storageService.clear();
+				await authProvider.signOut();
 			}
 			dialogElement.hideModal();
 			// wait 250ms to let the dialog close wth animation
@@ -249,9 +250,16 @@ export class FirebaseWeb3Connect {
 			// remove dialog element from DOM
 			dialogElement.remove();
 		}
+
 		this._wallet = undefined;
 		this._wallets = [];
 		this._encryptedSecret = undefined;
+
+		if (isExternalWallet && withUI) {
+			await authProvider.signOut();
+			return;
+		}
+
 		const unsubscribe = authProvider.getOnAuthStateChanged(user => {
 			if (user && this._requestSignout === true) {
 				unsubscribe();
