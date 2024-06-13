@@ -35,13 +35,18 @@ export class HexaSigninDialogElement
 			: 'FirebaseWeb3Connect';
 		const logoUrl =
 			(this.ops?.logoUrl?.length || 0) > 0 ? this.ops?.logoUrl : undefined;
+		const isLightMode =
+			_ops?.isLightMode === undefined
+				? window.matchMedia('(prefers-color-scheme: light)').matches
+				: _ops.isLightMode;
 		// object validation
 		// TODO: validate object
 		this._ops = {
 			..._ops,
 			logoUrl,
 			integrator,
-			enabledSigninMethods
+			enabledSigninMethods,
+			isLightMode
 		};
 		Logger.log(`[INFO] ops: `, this.ops);
 

@@ -35,10 +35,10 @@ class StorageService implements IStorageService {
 	}
 
 	public async isExistingPrivateKeyStored() {
-		const encryptedMapIndexString = window.localStorage.getItem(
-			Environment.bucketName
+		const encryptedPrivateKey = await this._storageProvider.getItem(
+			KEYS.STORAGE_PRIVATEKEY_KEY
 		);
-		return !!encryptedMapIndexString;
+		return !!encryptedPrivateKey;
 	}
 
 	public async executeBackup(requestBackup: boolean, secret?: string) {

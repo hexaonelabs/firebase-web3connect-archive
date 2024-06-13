@@ -2,19 +2,13 @@
 import { storageService } from '../../services/storage.service';
 
 export const promptPasswordElement = async (
-	ref: HTMLElement,
-	ops?: {
-		requestPwd?: boolean;
-	}
-): Promise<string> => {
+	ref: HTMLElement
+): Promise<string | null> => {
 	const minPasswordLength = 6;
 	const maxPasswordLength = 32;
 
-	const isRequestPwd = ops?.requestPwd || false;
-	const isCreating =
-		!(await storageService.isExistingPrivateKeyStored()) &&
-		isRequestPwd !== true;
-
+	const isCreating = !(await storageService.isExistingPrivateKeyStored());
+	console.log('isCreating', isCreating);
 	const isValideInputs = (value: string, confirmeValue?: string) => {
 		if (!confirmeValue) {
 			return (
@@ -109,6 +103,14 @@ export const promptPasswordElement = async (
 					<input class="prompt__input password single" type="password" maxLength="1" inputmode="numeric" />
 			</div>
       <button disabled class="prompt__button">OK</button>
+			${
+				!isCreating
+					? `<button type="reset" id="create-new-wallet">
+			<small>Create new Wallet</small>
+		</button>`
+					: ''
+			}
+			
     `;
 		container.innerHTML = html;
 		ref.after(container);
@@ -150,5 +152,15 @@ export const promptPasswordElement = async (
 				button.disabled = !isValid;
 			});
 		}
+
+		//  manage reset & create new wallet
+		const createBtn = container.querySelector(
+			'#create-new-wallet'
+		) as HTMLButtonElement;
+		createBtn?.addEventListener('click', () => {
+			resolve(null);
+			container.remove();
+			ref.style.display = 'block';
+		});
 	});
 };

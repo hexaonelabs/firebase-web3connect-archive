@@ -105,7 +105,7 @@ export class FirebaseWeb3Connect {
 		return authProvider.signInWithLink();
 	}
 
-	public async connectWithUI(isLightMode: boolean = false) {
+	public async connectWithUI(isLightMode?: boolean) {
 		if (this._requestSignout && this._uid) {
 			this._requestSignout = false;
 			await authProvider.updateUserAndTriggerStateChange();
@@ -199,13 +199,13 @@ export class FirebaseWeb3Connect {
 		return this.userInfo;
 	}
 
-	public async signout(withUI?: boolean) {
+	public async signout(withUI?: boolean, isLightMode?: boolean) {
 		this._requestSignout = true;
 		// display dialog to backup seed if withUI is true
 		const isExternalWallet = !this.wallet?.publicKey;
 		if (withUI && !isExternalWallet) {
 			const dialogElement = await setupSigninDialogElement(document.body, {
-				isLightMode: true,
+				isLightMode,
 				enabledSigninMethods: [SigninMethod.Wallet],
 				integrator: this._ops?.dialogUI?.integrator,
 				logoUrl: this._ops?.dialogUI?.logoUrl
@@ -274,10 +274,10 @@ export class FirebaseWeb3Connect {
 		// await authProvider.signOut();
 	}
 
-	public async backupWallet(withUI?: boolean) {
+	public async backupWallet(withUI?: boolean, isLightMode?: boolean) {
 		if (withUI) {
 			const dialogElement = await setupSigninDialogElement(document.body, {
-				isLightMode: true,
+				isLightMode,
 				enabledSigninMethods: [SigninMethod.Wallet],
 				integrator: this._ops?.dialogUI?.integrator,
 				logoUrl: this._ops?.dialogUI?.logoUrl
@@ -491,7 +491,7 @@ export class FirebaseWeb3Connect {
 			dialogElement =
 				existingDialog ||
 				(await setupSigninDialogElement(document.body, {
-					isLightMode: true,
+					// isLightMode: true,
 					enabledSigninMethods: [SigninMethod.Wallet],
 					integrator: this._ops?.dialogUI?.integrator,
 					logoUrl: this._ops?.dialogUI?.logoUrl
@@ -516,6 +516,27 @@ export class FirebaseWeb3Connect {
 				});
 			}
 			const secretPassword = await dialogElement.promptPassword();
+			// handle reset & create new wallet
+			if (!secretPassword) {
+				const confirm = window.confirm(
+					`You are about to clear all data to create new Wallet. This will remove all your existing data and we will not be able to recover it if you don't have backup. You are confirming that you want to clear all data and create new Wallet?`
+				);
+				if (!confirm) {
+					// close dialog
+					dialogElement?.hideModal();
+					dialogElement?.remove();
+					return null;
+				}
+				// clear storage
+				await storageService.clear();
+				localStorage.removeItem(KEYS.STORAGE_BACKUP_KEY);
+				// signout user
+				await authProvider.signOut();
+				// close dialog
+				dialogElement?.hideModal();
+				dialogElement?.remove();
+				return null;
+			}
 			try {
 				await passwordValidationOrSignature(secretPassword).execute();
 			} catch (error: unknown) {

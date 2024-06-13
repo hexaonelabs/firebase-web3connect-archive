@@ -196,14 +196,14 @@ a {
 	margin-right: 8px;
 }
 
-:host .buttonsList button#create-new-wallet {
+:host dialog button#create-new-wallet {
 	border: none;
 	background: transparent;
 	padding: 0;
 	margin: 0 auto;
 	opacity: 0.6;
 }
-:host .buttonsList button#create-new-wallet:hover {
+:host dialog button#create-new-wallet:hover {
 	background-color: transparent !important;
 }
 

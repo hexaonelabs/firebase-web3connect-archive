@@ -39,7 +39,7 @@ export type FirebaseWeb3ConnectDialogElement = HTMLElement & {
 	 * Methods that display a prompt to the user
 	 * and return the user's response as a string.
 	 */
-	promptPassword(): Promise<string>;
+	promptPassword(): Promise<string | null>;
 
 	/**
 	 * Methods that display a prompt to the user
