@@ -1,21 +1,40 @@
 import { storageService } from '../../services/storage.service';
 
 const isValideInputs = (
-	inputPassword: HTMLInputElement,
-	inputEmail?: HTMLInputElement
-) => {
-	if (!inputEmail || !inputPassword) {
-		return false;
+	inputs: {
+		inputPassword: HTMLInputElement;
+		inputEmail?: HTMLInputElement;
+	},
+	ops?: {
+		hideEmail?: boolean;
+		hidePassword?: boolean;
 	}
-	return inputPassword.value.length > 0 && inputEmail.value.length > 0;
+) => {
+	const { inputPassword, inputEmail } = inputs;
+	const { hideEmail, hidePassword } = ops || {};
+	const minPasswordLength = 6;
+	const maxPasswordLength = 32;
+	const isValidEmail = hideEmail ? true : inputEmail?.checkValidity();
+	const isValidPassword = hidePassword
+		? true
+		: !hidePassword &&
+			inputPassword?.value.length >= minPasswordLength &&
+			inputPassword?.value.length <= maxPasswordLength;
+	return isValidEmail && isValidPassword;
 };
 
 export const promptEmailPasswordElement = async (
-	ref: HTMLElement
+	ref: HTMLElement,
+	ops?: {
+		hideEmail?: boolean;
+		hidePassword?: boolean;
+	}
 ): Promise<{
-	password: string;
-	email: string;
+	password?: string;
+	email?: string;
 }> => {
+	const { hideEmail, hidePassword } = ops || {};
+	console.log({ hideEmail, hidePassword });
 	const minPasswordLength = 4;
 	const maxPasswordLength = 32;
 	const isCreating = !(await storageService.isExistingPrivateKeyStored());
@@ -64,32 +83,38 @@ export const promptEmailPasswordElement = async (
 
     </style>
     <div class="prompt__message">
-      ${isCreating ? '<h4>Create a new Wallet</h4>' : '<h4>Connect you Wallet</h4>'}
-      <p><b>${
-				isCreating ? 'Protect your Wallet with a password' : 'Welcome back!'
-			}</b></p>
+      ${isCreating ? '<h4>Create a new Wallet</h4>' : '<h4>Connect to your Wallet</h4>'}
       <p>
         ${
 					isCreating
-						? `The password you enter encrypts your private key and gives access to your funds. Please store your password in a safe place. We don’t keep your information and can’t restore it.`
-						: `Unlock Wallet with email & password.`
+						? `Enter your ${hideEmail ? '' : 'email '}${hidePassword ? '' : '& password'} to create a new wallet. ${hidePassword ? '' : `The password you enter will only be used to authenticate you.`}`
+						: `Enter your ${hideEmail ? '' : 'email '}${hidePassword ? '' : '& password'}`
 				}
       </p>
     </div>
-    <input 
-      class="prompt__input email" 
-      name="email"
-      type="email" 
-      minLength="${minPasswordLength}"
-      placeholder="email" />
-    <input 
-      class="prompt__input password" 
-      name="password"
-      type="password" 
-      minLength="${minPasswordLength}"
-      maxLength="${maxPasswordLength}"
-      autocomplet="current-password"
-      placeholder="password" />
+    ${
+			hideEmail
+				? ''
+				: `<input 
+            class="prompt__input email" 
+            name="email"
+            type="email" 
+            minLength="${minPasswordLength}"
+            placeholder="email" />`
+		}
+    ${
+			hidePassword
+				? ''
+				: `<input 
+          class="prompt__input password" 
+          name="password"
+          type="password" 
+          minLength="${minPasswordLength}"
+          maxLength="${maxPasswordLength}"
+          autocomplet="current-password"
+          placeholder="password" />`
+		}
+    
     <button disabled class="prompt__button">Connect</button>
     `;
 		container.innerHTML = html;
@@ -107,15 +132,19 @@ export const promptEmailPasswordElement = async (
 		) as HTMLButtonElement;
 
 		// manage validation of input to enable button
-		inputPassword.addEventListener('input', () => {
-			const isValid = isValideInputs(inputPassword, inputEmail);
+		inputPassword?.addEventListener('input', () => {
+			const isValid = isValideInputs({ inputPassword, inputEmail }, ops);
+			button.disabled = !isValid;
+		});
+		inputEmail?.addEventListener('input', () => {
+			const isValid = isValideInputs({ inputPassword, inputEmail }, ops);
 			button.disabled = !isValid;
 		});
 
 		button.addEventListener('click', () => {
 			resolve({
-				password: inputPassword.value,
-				email: inputEmail.value
+				password: inputPassword?.value,
+				email: inputEmail?.value
 			});
 			container.remove();
 			// prevent flash ui. ref will be hiden to display backup step

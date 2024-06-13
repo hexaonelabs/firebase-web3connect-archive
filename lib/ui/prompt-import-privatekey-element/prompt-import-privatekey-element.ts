@@ -1,12 +1,10 @@
-import Crypto from '../../providers/crypto/crypto';
 import { CheckboxElement } from '../checkbox-element/checkbox-element';
-import { promptPasswordElement } from '../prompt-password-element/prompt-password-element';
 
 export const promptImportPrivatekeyElement = async (
 	ref: HTMLElement
 ): Promise<{
 	privateKey: string;
-	secret: string;
+	isEncrypted: boolean;
 }> => {
 	const container = document.createElement('div');
 	container.classList.add('prompt-container');
@@ -42,7 +40,7 @@ export const promptImportPrivatekeyElement = async (
 
 	const resutl = await new Promise<{
 		privateKey: string;
-		secret: string;
+		isEncrypted: boolean;
 	}>((resolve, reject) => {
 		buttonImportPrivatekey.addEventListener('click', e => {
 			e.preventDefault();
@@ -55,20 +53,10 @@ export const promptImportPrivatekeyElement = async (
 			try {
 				const content = await file.text();
 				const isEncrypted = toggleEncription.checked;
-				if (isEncrypted) {
-					const secret = await promptPasswordElement(container, {
-						requestPwd: true
-					});
-					const privateKey = await Crypto.decrypt(secret, content);
-					resolve({ secret, privateKey });
-				} else {
-					// request new password to encrypt the private key before store it.
-					const secret = await promptPasswordElement(container);
-					resolve({
-						secret,
-						privateKey: content
-					});
-				}
+				resolve({
+					privateKey: content,
+					isEncrypted
+				});
 				container.remove();
 				ref.style.display = 'block';
 			} catch (error) {

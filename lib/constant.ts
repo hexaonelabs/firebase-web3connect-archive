@@ -2,12 +2,14 @@
 export enum SigninMethod {
 	Google = 'connect-google',
 	Email = 'connect-email',
+	EmailLink = 'connect-email-link',
 	Wallet = 'connect-wallet'
 }
 
 export const DEFAULT_SIGNIN_METHODS: SigninMethod[] = [
 	SigninMethod.Google,
 	SigninMethod.Email,
+	SigninMethod.EmailLink,
 	SigninMethod.Wallet
 ];
 

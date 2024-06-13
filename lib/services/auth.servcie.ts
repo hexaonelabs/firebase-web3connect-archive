@@ -1,47 +1,30 @@
-import { passwordValidationOrSignature } from '../providers/crypto/password';
 import authProvider from '../providers/auth/firebase';
 import Crypto from '../providers/crypto/crypto';
 import { KEYS } from '../constant';
 import { storageService } from './storage.service';
 import { Logger } from '../utils';
 
-export const authWithGoogle = async (ops: {
-	password: string;
-	skip?: boolean;
-	withEncryption?: boolean;
-}) => {
-	const { password, skip, withEncryption } = ops;
-	// If user already have a signature stored into Database,
-	// we validate the password with validation signature method.
-	// Otherwise we sign message with the password and store it in the Database
-	await passwordValidationOrSignature(password).execute();
+export const authWithGoogle = async () => {
+	// const { skip, withEncryption } = ops || {};
+	// // if user is requesting to create new privatekey
+	// const privateKey = await storageService.getItem(KEYS.STORAGE_PRIVATEKEY_KEY);
+	// if (!privateKey && !skip) {
+	// 	// store to local storage tag to trigger download of the private key
+	// 	// when the user is connected (using listener onConnectStateChanged)
+	// 	localStorage.setItem(
+	// 		KEYS.STORAGE_BACKUP_KEY,
+	// 		withEncryption ? 'true' : 'false'
+	// 	);
+	// }
 
-	// if user is requesting to create new privatekey
-	const privateKey = await storageService.getItem(KEYS.STORAGE_PRIVATEKEY_KEY);
-	if (!privateKey && !skip) {
-		// store to local storage tag to trigger download of the private key
-		// when the user is connected (using listener onConnectStateChanged)
-		localStorage.setItem(
-			KEYS.STORAGE_BACKUP_KEY,
-			withEncryption ? 'true' : 'false'
-		);
-	}
-
-	// encrypt secret with user secret and store it
-	const encryptedSecret = await Crypto.encrypt(
-		storageService.getUniqueID(),
-		password
-	);
-	await storageService.setItem(KEYS.STORAGE_SECRET_KEY, encryptedSecret);
-
-	// store to local storage tag to trigger download of the private key
-	// if user want to skip now and download later on connectWithUI()
-	// use timestamp to trigger download later
-	if (skip === true) {
-		await storageService.setItem(KEYS.STORAGE_SKIP_BACKUP_KEY, `${Date.now()}`);
-	}
+	// // store to local storage tag to trigger download of the private key
+	// // if user want to skip now and download later on connectWithUI()
+	// // use timestamp to trigger download later
+	// if (skip === true) {
+	// 	await storageService.setItem(KEYS.STORAGE_SKIP_BACKUP_KEY, `${Date.now()}`);
+	// }
 	// Now we can connect with Google
-	const result = await authProvider.signinWithGoogle(privateKey || undefined);
+	const result = await authProvider.signinWithGoogle();
 	// .catch(async (error: { code?: string; message?: string }) => {
 	// 	const { code = '', message = '' } = error;
 	// 	// alert(`DEBUG: ${code} - ${message}`);
@@ -70,7 +53,6 @@ export const authWithGoogle = async (ops: {
 	// 	}
 	// 	throw error;
 	// });
-	console.log('result', { result });
 	return result;
 };
 
@@ -80,11 +62,7 @@ export const authWithEmailPwd = async (ops: {
 	skip?: boolean;
 	withEncryption?: boolean;
 }) => {
-	const { password, skip, withEncryption } = ops;
-	// If user already have a signature stored into Database,
-	// we validate the password with validation signature method.
-	// Otherwise we sign message with the password and store it in the Database
-	await passwordValidationOrSignature(password).execute();
+	const { password, skip, withEncryption, email } = ops;
 	// if user is requesting to create new privatekey
 	const privateKey =
 		(await storageService.getItem(KEYS.STORAGE_PRIVATEKEY_KEY)) || undefined;
@@ -97,16 +75,9 @@ export const authWithEmailPwd = async (ops: {
 		);
 	}
 
-	// encrypt secret with user secret and store it
-	const encryptedSecret = await Crypto.encrypt(
-		storageService.getUniqueID(),
-		password
-	);
-	await storageService.setItem(KEYS.STORAGE_SECRET_KEY, encryptedSecret);
-
 	// Now we can connect with Google
 	const result = await authProvider
-		.signInWithEmailPwd(ops.email, ops.password)
+		.signInWithEmailPwd(email, password)
 		.catch(async (error: { code?: string; message?: string }) => {
 			// clean storage if error on creation step
 			const { code = '', message = '' } = error;
@@ -141,6 +112,12 @@ export const authWithEmailPwd = async (ops: {
 	return result;
 };
 
+export const authWithEmailLink = async (ops: { email: string }) => {
+	const { email } = ops;
+	await authProvider.sendLinkToEmail(email);
+	return;
+};
+
 export const authWithExternalWallet = async () => {
 	Logger.log('authWithExternalWallet');
 	const {
@@ -150,35 +127,40 @@ export const authWithExternalWallet = async () => {
 };
 
 export const authByImportPrivateKey = async (ops: {
-	password: string;
 	privateKey: string;
+	isEncrypted?: boolean;
 }) => {
-	const { password, privateKey } = ops;
-
-	// encrypt private key before storing it
-	const encryptedPrivateKey = await Crypto.encrypt(password, privateKey);
-	await storageService.setItem(
-		KEYS.STORAGE_PRIVATEKEY_KEY,
-		encryptedPrivateKey
-	);
+	const { privateKey, isEncrypted } = ops;
+	if (!isEncrypted) {
+		// encrypt private key before storing it
+		const encryptedPrivateKey = await Crypto.encrypt(
+			storageService.getUniqueID(),
+			privateKey
+		);
+		await storageService.setItem(
+			KEYS.STORAGE_PRIVATEKEY_KEY,
+			`UniqueID-${encryptedPrivateKey}`
+		);
+	} else {
+		await storageService.setItem(KEYS.STORAGE_PRIVATEKEY_KEY, privateKey);
+	}
 	// trigger Auth with Google
-	const { uid } = await authWithGoogle({
-		password
-	});
+	const { uid } = await authWithGoogle();
 	return { uid };
 };
 
-export const authByImportSeed = async (ops: {
-	seed: string;
-	password: string;
-}) => {
-	const { seed, password } = ops;
+export const authByImportSeed = async (ops: { seed: string }) => {
+	const { seed } = ops;
 	// encrypt seed before storing it
-	const encryptedSeed = await Crypto.encrypt(password, seed);
-	await storageService.setItem(KEYS.STORAGE_PRIVATEKEY_KEY, encryptedSeed);
+	const encryptedSeed = await Crypto.encrypt(
+		storageService.getUniqueID(),
+		seed
+	);
+	await storageService.setItem(
+		KEYS.STORAGE_PRIVATEKEY_KEY,
+		`UniqueID-${encryptedSeed}`
+	);
 	// trigger Auth with Google
-	const { uid } = await authWithGoogle({
-		password
-	});
+	const { uid } = await authWithGoogle();
 	return { uid };
 };

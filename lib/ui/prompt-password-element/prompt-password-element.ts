@@ -126,9 +126,10 @@ export const promptPasswordElement = async (
 			container.remove();
 			// prevent flash ui. ref will be hiden to display backup step
 			// if is creating wallet. This is why we dont switch to display block
-			if (!isCreating) {
-				ref.style.display = 'block';
-			}
+			// if (!isCreating) {
+			// 	ref.style.display = 'block';
+			// }
+			ref.style.display = 'block';
 		});
 
 		// manage validation of input to enable button

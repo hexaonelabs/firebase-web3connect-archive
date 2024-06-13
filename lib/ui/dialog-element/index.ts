@@ -6,13 +6,14 @@ import {
 	authByImportPrivateKey,
 	authWithGoogle,
 	authWithEmailPwd,
-	authByImportSeed
+	authByImportSeed,
+	authWithEmailLink
 } from '../../services/auth.servcie';
 import { promptImportPrivatekeyElement } from '../prompt-import-privatekey-element/prompt-import-privatekey-element';
 import { storageService } from '../../services/storage.service';
 import { promptImportSeedElement } from '../prompt-import-seed-element/prompt-import-seed-element';
 import { Logger } from '../../utils';
-
+import authProvider from '../../providers/auth/firebase';
 
 const setupSigninDialogElement = async (
 	ref: HTMLElement = document.body,
@@ -46,7 +47,6 @@ const addAndWaitUIEventsResult = (
 	| {
 			uid?: string;
 			isAnonymous?: boolean;
-			password?: string;
 			authMethod: SigninMethod;
 	  }
 	| undefined
@@ -57,7 +57,6 @@ const addAndWaitUIEventsResult = (
 				value:
 					| {
 							uid?: string;
-							password?: string;
 							isAnonymous?: boolean;
 							authMethod: SigninMethod;
 					  }
@@ -80,27 +79,16 @@ const addAndWaitUIEventsResult = (
 				// handle type of connection request
 				if (detail === 'connect-google') {
 					try {
-						const password = await dialogElement.promptPassword();
-						// prompt to download private key if not already stored
-						const privateKey = await storageService.getItem(
-							KEYS.STORAGE_PRIVATEKEY_KEY
-						);
-						const { withEncryption, skip } = !privateKey
-							? await dialogElement.promptBackup()
-							: {
-									withEncryption: undefined,
-									skip: undefined
-								};
+						(
+							dialogElement.shadowRoot?.querySelector(
+								'dialog #spinner'
+							) as HTMLElement
+						).style.display = 'block';
 						// use service to request connection with google
-						const { uid } = await authWithGoogle({
-							password,
-							skip,
-							withEncryption
-						});
+						const { uid } = await authWithGoogle();
 						// await dialogElement.toggleSpinnerAsCheck();
 						resolve({
 							uid,
-							password,
 							authMethod: detail as SigninMethod
 						});
 					} catch (error: unknown) {
@@ -115,6 +103,9 @@ const addAndWaitUIEventsResult = (
 					try {
 						const { password, email } =
 							await dialogElement.promptEmailPassword();
+						if (!password || !email) {
+							throw new Error('Email and password are required to connect');
+						}
 						// prompt to download private key if not already stored
 						const privateKey = await storageService.getItem(
 							KEYS.STORAGE_PRIVATEKEY_KEY
@@ -133,7 +124,6 @@ const addAndWaitUIEventsResult = (
 
 						resolve({
 							uid,
-							password,
 							authMethod: detail as SigninMethod
 						});
 					} catch (error: unknown) {
@@ -144,27 +134,54 @@ const addAndWaitUIEventsResult = (
 						return;
 					}
 				}
-				// if (detail === 'connect-email-link') {
-				//   try {
-				//     const sub = this.onConnectStateChanged(async (user) => {
-				//       if (user) {
-				//         sub();
-				//         await dialogElement.toggleSpinnerAsCheck();
-				//         dialogElement.hideModal();
-				//         resolve(this.userInfo);
-				//       }
-				//     });
-				//     await this._authWithEmailLink();
-				//   } catch (error: any) {
-				//     dialogElement.hideModal();
-				//     reject(
-				//       new Error(
-				//         `Error while connecting with ${detail}: ${error?.message}`
-				//       )
-				//     );
-				//   }
-				//   return;
-				// }
+				if (detail === 'connect-email-link') {
+					const { email } = await dialogElement.promptEmailPassword({
+						hidePassword: true
+					});
+					if (!email) {
+						reject(new Error('Email is required to connect'));
+						return;
+					}
+					try {
+						const unsubscribe = authProvider.getOnAuthStateChanged(
+							async user => {
+								if (user) {
+									unsubscribe();
+									await dialogElement.toggleSpinnerAsCheck();
+									dialogElement.hideModal();
+									resolve({
+										uid: user.uid,
+										isAnonymous: user.isAnonymous,
+										authMethod: detail as SigninMethod
+									});
+								}
+							}
+						);
+						await authWithEmailLink({ email });
+						// display message into DOM conatainer
+						// add HTML to explain the user to click on the link that will authenticate him
+						const finalStepElement = document.createElement('div');
+						finalStepElement.innerHTML = `
+							<p>
+								Please check your email & click on the link to authenticate.
+								<br />
+								Once authenticated, this dialog will close automatically & you will be connected.
+							</p>
+						`;
+						dialogElement.shadowRoot
+							?.querySelector('dialog #spinner')
+							?.after(finalStepElement);
+					} catch (error: unknown) {
+						dialogElement.hideModal();
+						const message =
+							(error as Error)?.message ||
+							'An error occured. Please try again.';
+						reject(
+							new Error(`Error while connecting with ${detail}: ${message}`)
+						);
+					}
+					return;
+				}
 				if (detail === 'connect-wallet') {
 					try {
 						const walletType = await dialogElement.promptWalletType();
@@ -182,32 +199,29 @@ const addAndWaitUIEventsResult = (
 							}
 							case 'import-seed': {
 								// import seed
-								const { seed, secret } = await promptImportSeedElement(
+								const { seed } = await promptImportSeedElement(
 									dialogElement?.shadowRoot?.querySelector(
 										'#spinner'
 									) as HTMLElement
 								);
 								Logger.log(`[INFO] Import seed: `, {
-									seed,
-									secret
+									seed
 								});
 								if (!seed) {
 									throw new Error('Seed is required to connect');
 								}
 								const { uid } = await authByImportSeed({
-									password: secret,
 									seed
 								});
 								resolve({
 									uid,
-									password: secret,
 									authMethod: detail as SigninMethod
 								});
 								break;
 							}
 							case 'import-privatekey': {
 								// import private key and request password
-								const { privateKey, secret } =
+								const { privateKey, isEncrypted } =
 									await promptImportPrivatekeyElement(
 										dialogElement?.shadowRoot?.querySelector(
 											'#spinner'
@@ -215,18 +229,17 @@ const addAndWaitUIEventsResult = (
 									);
 								Logger.log(`[INFO] Import private key: `, {
 									privateKey,
-									secret
+									isEncrypted
 								});
 								if (!privateKey) {
 									throw new Error('Private key is required to connect');
 								}
 								const { uid } = await authByImportPrivateKey({
-									password: secret,
-									privateKey
+									privateKey,
+									isEncrypted
 								});
 								resolve({
 									uid,
-									password: secret,
 									authMethod: detail as SigninMethod
 								});
 								break;

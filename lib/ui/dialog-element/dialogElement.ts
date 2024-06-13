@@ -185,6 +185,13 @@ export class HexaSigninDialogElement
 							})
 						);
 						break;
+					case 'connect-email-link':
+						this.dispatchEvent(
+							new CustomEvent('connect', {
+								detail: button.id
+							})
+						);
+						break;
 					case 'connect-wallet':
 						this.dispatchEvent(
 							new CustomEvent('connect', {
@@ -405,9 +412,13 @@ export class HexaSigninDialogElement
 		return value;
 	}
 
-	public async promptEmailPassword() {
+	public async promptEmailPassword(ops?: {
+		hideEmail?: boolean;
+		hidePassword?: boolean;
+	}) {
 		const value = await promptEmailPasswordElement(
-			this.shadowRoot?.querySelector('dialog #spinner') as HTMLElement
+			this.shadowRoot?.querySelector('dialog #spinner') as HTMLElement,
+			ops
 		);
 		return value;
 	}

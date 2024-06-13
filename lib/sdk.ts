@@ -15,7 +15,7 @@ import {
 	SigninMethod
 } from './constant';
 // import { parseApiKey } from './utils';
-import { initWallet } from './services/wallet.service.ts';
+import { generateMnemonic, initWallet } from './services/wallet.service.ts';
 import { Auth } from 'firebase/auth';
 import { SDKOptions } from './interfaces/sdk.interface.ts';
 import { storageService } from './services/storage.service.ts';
@@ -27,15 +27,18 @@ import {
 	set
 } from './providers/storage/firebase.ts';
 import { authWithExternalWallet } from './services/auth.servcie.ts';
+import { FirebaseWeb3ConnectDialogElement } from './interfaces/dialog-element.interface.ts';
+import { passwordValidationOrSignature } from './providers/crypto/password.ts';
 
 export class FirebaseWeb3Connect {
 	private readonly _apiKey!: string;
 	private _ops?: SDKOptions;
-	private _secret!: string | undefined;
+	private _encryptedSecret!: string | undefined;
 	private _uid!: string | undefined;
 	private _cloudBackupEnabled!: boolean | undefined;
 	private _wallet!: Web3Wallet | undefined;
 	private _wallets: Web3Wallet[] = [];
+	private _requestSignout: boolean = false;
 
 	get provider() {
 		return this._wallet?.provider;
@@ -103,6 +106,12 @@ export class FirebaseWeb3Connect {
 	}
 
 	public async connectWithUI(isLightMode: boolean = false) {
+		if (this._requestSignout && this._uid) {
+			this._requestSignout = false;
+			await authProvider.updateUserAndTriggerStateChange();
+			return this.userInfo;
+		}
+		this._requestSignout = false;
 		// check if have an existing auth method setup
 		const authMethod = (await storageService.getItem(
 			KEYS.STORAGE_AUTH_METHOD_KEY
@@ -122,7 +131,6 @@ export class FirebaseWeb3Connect {
 		try {
 			// wait for connect event
 			const {
-				password,
 				isAnonymous = false,
 				uid,
 				authMethod
@@ -131,7 +139,6 @@ export class FirebaseWeb3Connect {
 			if (authMethod && authMethod !== SigninMethod.Wallet) {
 				await storageService.setItem(KEYS.STORAGE_AUTH_METHOD_KEY, authMethod);
 			}
-			Logger.log(`[INFO] Closing dialog`, { password, isAnonymous, uid });
 			// handle close event && anonymous user from External wallet
 			if (!uid && !isAnonymous) {
 				dialogElement.hideModal();
@@ -158,7 +165,6 @@ export class FirebaseWeb3Connect {
 				return this.userInfo;
 			}
 			// handle user connection
-			this._secret = password;
 			this._uid = uid || this._uid;
 			if (!this._uid) {
 				throw new Error('User not connected');
@@ -166,41 +172,21 @@ export class FirebaseWeb3Connect {
 			if (isAnonymous) {
 				throw new Error('External wallet have to be handled to be setup.');
 			}
-			// init wallet to set user info BEFORE firebase hook `onAuthStateChanged` is triggered
-			// to prevent unexisting user info that is needed to perform wallet backup and other operations
-			// and to return `userInfo` with values set.
-			await this._initWallets({
-				isAnonymous,
-				uid: this._uid
+			// await user auth state changed that tigger wallet initialization
+			await new Promise(resolve => {
+				const unsubscribe = authProvider.getOnAuthStateChanged(async user => {
+					if (user && this.userInfo?.address) {
+						console.log({ user, userInfo: this.userInfo });
+						resolve(user);
+						unsubscribe();
+					}
+				});
 			});
 		} catch (error: unknown) {
 			const message =
 				(error as Error)?.message || 'An error occured while connecting';
 			await dialogElement.toggleSpinnerAsCross(message);
 			throw error;
-		}
-
-		// check local storage to existing tag to trigger backup download of private key
-		const requestBackup = localStorage.getItem(KEYS.STORAGE_BACKUP_KEY);
-		if (this.userInfo && requestBackup && this._secret) {
-			await storageService.executeBackup(Boolean(requestBackup), this._secret);
-		}
-
-		// ask to download if user skip download prompt from more than 15 minutes
-		const skip = await storageService.getItem(KEYS.STORAGE_SKIP_BACKUP_KEY);
-		const skipTime = skip ? parseInt(skip) : Date.now();
-		// check if is more than 15 minutes
-		// TODO: check if is working correctly
-		const isOut = Date.now() - skipTime > MAX_SKIP_BACKUP_TIME;
-		if (this.userInfo && isOut) {
-			const { withEncryption, skip: reSkip } =
-				await dialogElement.promptBackup();
-			if (!reSkip) {
-				await storageService.executeBackup(
-					Boolean(withEncryption),
-					this._secret
-				);
-			}
 		}
 		await dialogElement.toggleSpinnerAsCheck();
 		// close modal with animation and resolve the promise with user info
@@ -209,10 +195,12 @@ export class FirebaseWeb3Connect {
 		await new Promise(resolve => setTimeout(resolve, 225));
 		// remove dialog element
 		dialogElement?.remove();
+		console.log(`[INFO] Closing dialog`, { userInfo: this.userInfo });
 		return this.userInfo;
 	}
 
 	public async signout(withUI?: boolean) {
+		this._requestSignout = true;
 		// display dialog to backup seed if withUI is true
 		const isExternalWallet = !this.wallet?.publicKey;
 		if (withUI && !isExternalWallet) {
@@ -243,10 +231,13 @@ export class FirebaseWeb3Connect {
 				dialogElement.remove();
 				return;
 			}
-			if (!reSkip) {
+			if (!reSkip && this._encryptedSecret) {
 				await storageService.executeBackup(
 					Boolean(withEncryption),
-					this._secret
+					await Crypto.decrypt(
+						storageService.getUniqueID(),
+						this._encryptedSecret
+					)
 				);
 			}
 			if (clearStorage) {
@@ -254,12 +245,25 @@ export class FirebaseWeb3Connect {
 			}
 			dialogElement.hideModal();
 			// wait 250ms to let the dialog close wth animation
-			await new Promise(resolve => setTimeout(resolve, 250));
+			await new Promise(resolve => setTimeout(resolve, 150));
 			// remove dialog element from DOM
 			dialogElement.remove();
 		}
-		await storageService.removeItem(KEYS.STORAGE_SECRET_KEY);
-		await authProvider.signOut();
+		this._wallet = undefined;
+		this._wallets = [];
+		this._encryptedSecret = undefined;
+		const unsubscribe = authProvider.getOnAuthStateChanged(user => {
+			if (user && this._requestSignout === true) {
+				unsubscribe();
+				const t = setTimeout(async () => {
+					await this.connectWithUI();
+					clearTimeout(t);
+				}, 500);
+			}
+		});
+		await authProvider.updateUserAndTriggerStateChange();
+		// await storageService.removeItem(KEYS.STORAGE_SECRET_KEY);
+		// await authProvider.signOut();
 	}
 
 	public async backupWallet(withUI?: boolean) {
@@ -278,10 +282,13 @@ export class FirebaseWeb3Connect {
 			dialogElement.showModal();
 			const { withEncryption, skip: reSkip } =
 				await dialogElement.promptBackup();
-			if (!reSkip) {
+			if (!reSkip && this._encryptedSecret) {
 				await storageService.executeBackup(
 					Boolean(withEncryption),
-					this._secret
+					await Crypto.decrypt(
+						storageService.getUniqueID(),
+						this._encryptedSecret
+					)
 				);
 			}
 			dialogElement.hideModal();
@@ -302,37 +309,78 @@ export class FirebaseWeb3Connect {
 	 */
 	public onConnectStateChanged(cb: (user: { address: string } | null) => void) {
 		return authProvider.getOnAuthStateChanged(async user => {
+			console.log('[INFO] bof onConnectStateChanged()', user);
 			if (user?.uid && !user?.emailVerified && !user?.isAnonymous) {
-				Logger.log('[INFO] onConnectStateChanged:', user);
 				await this._displayVerifyEMailModal();
 				return;
 			}
 			this._uid = user?.uid;
 
-			if (!this.userInfo && user) {
+			if (!this.userInfo && user && this._requestSignout === false) {
 				try {
+					// initialize all wallets
 					await this._initWallets(user);
+					if (user.isAnonymous) {
+						return;
+					}
+					// check local storage to existing tag to trigger backup download of private key
+					const requestBackup = localStorage.getItem(KEYS.STORAGE_BACKUP_KEY);
+					if (this.userInfo && requestBackup && this._encryptedSecret) {
+						await storageService.executeBackup(
+							Boolean(requestBackup),
+							await Crypto.decrypt(
+								storageService.getUniqueID(),
+								this._encryptedSecret
+							)
+						);
+					}
+
+					// ask to download if user skip download prompt from more than 15 minutes
+					const skip = await storageService.getItem(
+						KEYS.STORAGE_SKIP_BACKUP_KEY
+					);
+					const skipTime = skip ? parseInt(skip) : Date.now();
+					// check if is more than 15 minutes
+					// TODO: check if is working correctly
+					const isOut = Date.now() - skipTime > MAX_SKIP_BACKUP_TIME;
+					const dialogElement = document.querySelector(
+						'firebase-web3connect-dialog'
+					) as FirebaseWeb3ConnectDialogElement;
+					if (
+						this.userInfo &&
+						isOut &&
+						this._encryptedSecret &&
+						dialogElement
+					) {
+						const { withEncryption, skip: reSkip } =
+							await dialogElement.promptBackup();
+						if (!reSkip) {
+							await storageService.executeBackup(
+								Boolean(withEncryption),
+								await Crypto.decrypt(
+									storageService.getUniqueID(),
+									this._encryptedSecret
+								)
+							);
+						}
+						dialogElement.hideModal();
+						await new Promise(resolve => setTimeout(resolve, 125));
+						dialogElement.remove();
+					}
 				} catch (error: unknown) {
 					await authProvider.signOut();
+					const existingDialog = document.querySelector(
+						`firebase-web3connect-dialog`
+					) as FirebaseWeb3ConnectDialogElement | undefined;
 					// await storageService.clear();
 					const message =
 						(error as Error)?.message || 'An error occured while connecting';
-					Logger.error('[ERROR] onConnectStateChanged:', message);
-					//throw error;
-				}
-
-				// set secret if undefined and stored in service
-				const encryptedSecret = await storageService.getItem(
-					KEYS.STORAGE_SECRET_KEY
-				);
-				if (encryptedSecret) {
-					const secret = await Crypto.decrypt(
-						storageService.getUniqueID(),
-						encryptedSecret
-					);
-					if (!this._secret) {
-						this._secret = secret;
+					if (existingDialog) {
+						await existingDialog.toggleSpinnerAsCross(message);
+					} else {
+						Logger.error('[ERROR] onConnectStateChanged:', message);
 					}
+					//throw error;
 				}
 			}
 			if (
@@ -351,16 +399,14 @@ export class FirebaseWeb3Connect {
 			}
 			// reset state if no user connected
 			if (!user) {
-				this._secret = undefined;
+				this._encryptedSecret = undefined;
 				this._wallet = undefined;
 				this._cloudBackupEnabled = undefined;
 				this._uid = undefined;
 			}
-			Logger.log('[INFO] onConnectStateChanged:', {
-				user,
+			console.log('[INFO] eof onConnectStateChanged()', {
 				userInfo: this.userInfo,
-				provider: this.provider,
-				_secret: this._secret
+				encryptedSecret: this._encryptedSecret
 			});
 			cb(user ? this.userInfo : null);
 		});
@@ -415,24 +461,117 @@ export class FirebaseWeb3Connect {
 		if (this.userInfo?.address) {
 			return this.userInfo;
 		}
+		console.log('[INFO] bof - initWallets(): ', { user });
 		const defaultNetworkId = this._ops?.chainId || CHAIN_DEFAULT.id;
-		// handle external wallet
+		// handle external wallet:
 		if (user.isAnonymous) {
-			const wallet = await initWallet(user, this._secret, defaultNetworkId);
+			const wallet = await initWallet(user, undefined, defaultNetworkId);
 			this._wallets = [wallet];
 			await this._setWallet(wallet);
 			return this._wallets;
 		}
-		// handle local wallet
+
+		// handle local wallet:
+		// manage secret
+		let dialogElement: FirebaseWeb3ConnectDialogElement | undefined;
+		if (!this._encryptedSecret) {
+			// prompt user to enter secret using dialog
+			// check if existing dialog element is available
+			const existingDialog = document.querySelector(
+				'firebase-web3connect-dialog'
+			) as FirebaseWeb3ConnectDialogElement;
+			dialogElement =
+				existingDialog ||
+				(await setupSigninDialogElement(document.body, {
+					isLightMode: true,
+					enabledSigninMethods: [SigninMethod.Wallet],
+					integrator: this._ops?.dialogUI?.integrator,
+					logoUrl: this._ops?.dialogUI?.logoUrl
+				}));
+			// remove all default login buttons if existing
+			const btnsElement = dialogElement.shadowRoot?.querySelector(
+				'dialog .buttonsList'
+			) as HTMLElement;
+			btnsElement?.remove();
+			// hide `dialog #cancel` button
+			const cancelButton = dialogElement.shadowRoot?.querySelector(
+				'dialog #cancel'
+			) as HTMLButtonElement;
+			cancelButton.style.display = 'none';
+			// show dialog if not already displayed
+			if (!existingDialog) {
+				dialogElement.showModal();
+				cancelButton?.addEventListener('click', () => {
+					dialogElement?.hideModal();
+					dialogElement?.remove();
+					return this.userInfo;
+				});
+			}
+			const secretPassword = await dialogElement.promptPassword();
+			try {
+				await passwordValidationOrSignature(secretPassword).execute();
+			} catch (error: unknown) {
+				// display `dialog #cancel` button
+				const cancelButton = dialogElement.shadowRoot?.querySelector(
+					'dialog #cancel'
+				) as HTMLButtonElement;
+				cancelButton.style.display = 'block';
+				throw new Error(
+					(error as Error).message || `Password validation failed.`
+				);
+			}
+			// save secret in memory & encrypted
+			this._encryptedSecret = await Crypto.encrypt(
+				storageService.getUniqueID(),
+				secretPassword
+			);
+		}
+		// check if encrypted mnemonic is available from storage
+		const storedEncryptedMnemonic = await storageService.getItem(
+			KEYS.STORAGE_PRIVATEKEY_KEY
+		);
+		const mnemonic = storedEncryptedMnemonic
+			? await Crypto.decrypt(
+					storedEncryptedMnemonic.startsWith('UniqueID')
+						? storageService.getUniqueID()
+						: await Crypto.decrypt(
+								storageService.getUniqueID(),
+								this._encryptedSecret
+							),
+					storedEncryptedMnemonic.startsWith('UniqueID')
+						? (storedEncryptedMnemonic.split('-').pop() as string)
+						: storedEncryptedMnemonic
+				)
+			: generateMnemonic();
+		// encrypt mnemonic before storing it if not already stored
+		// or if is encrypted with UniqueID
+		if (
+			!storedEncryptedMnemonic ||
+			storedEncryptedMnemonic?.startsWith('UniqueID')
+		) {
+			const encryptedMnemonic = await Crypto.encrypt(
+				await Crypto.decrypt(
+					storageService.getUniqueID(),
+					this._encryptedSecret
+				),
+				mnemonic
+			);
+			await storageService.setItem(
+				KEYS.STORAGE_PRIVATEKEY_KEY,
+				encryptedMnemonic
+			);
+		}
+
+		// manage wallets
 		try {
 			const wallets: Web3Wallet[] = [];
-			await initWallet(user, this._secret, defaultNetworkId).then(wallet =>
+			await initWallet(user, mnemonic, defaultNetworkId).then(wallet =>
 				wallets.push(wallet)
 			);
-			await initWallet(user, this._secret, NETWORK.bitcoin).then(wallet =>
+			await initWallet(user, mnemonic, NETWORK.bitcoin).then(wallet =>
 				wallets.push(wallet)
 			);
-			await initWallet(user, this._secret, NETWORK.solana).then(wallet =>
+			await initWallet(user, mnemonic, NETWORK.solana).then(wallet =>
 				wallets.push(wallet)
 			);
 			// set wallets values with the generated wallet
@@ -440,8 +579,6 @@ export class FirebaseWeb3Connect {
 			await this._setWallet(
 				wallets.find(wallet => wallet.chainId === defaultNetworkId)
 			);
-			Logger.log(`[INFO] _initWallets:`, wallets);
-			return this._wallets;
 		} catch (error: unknown) {
 			Logger.error(`[ERROR] _initWallets:`, error);
 			storageService.clear();
@@ -449,6 +586,15 @@ export class FirebaseWeb3Connect {
 			await authProvider.signOut();
 			throw error;
 		}
+		if (dialogElement) {
+			// display check & close dialog
+			await dialogElement.toggleSpinnerAsCheck();
+			dialogElement.hideModal();
+			await new Promise(resolve => setTimeout(resolve, 125));
+			dialogElement.remove();
+		}
+		Logger.log(`[INFO] eof initWallets(): `, { wallets: this._wallets });
+		return this._wallets;
 	}
 
 	/**
@@ -468,7 +614,16 @@ export class FirebaseWeb3Connect {
 			);
 		}
 		// generate wallet base on user state and chainId
-		const wallet = await initWallet(user, this._secret, chainId);
+		if (!this._encryptedSecret) {
+			throw new Error(
+				'Secret is required to decrypt the private key and initialize the wallet.'
+			);
+		}
+		const wallet = await initWallet(
+			user,
+			await Crypto.decrypt(storageService.getUniqueID(), this._encryptedSecret),
+			chainId
+		);
 		if (!wallet) {
 			throw new Error('Failed to generate wallet');
 		}

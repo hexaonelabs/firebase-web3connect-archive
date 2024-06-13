@@ -6,7 +6,7 @@ type Unsubscribe = () => void;
 type UserCredential = { user: User };
 
 export interface IAuthProvider {
-	signinWithGoogle: (privateKey?: string) => Promise<User>;
+	signinWithGoogle: () => Promise<User>;
 	sendLinkToEmail: (email: string) => Promise<void>;
 	signInWithLink: () => Promise<UserCredential | undefined>;
 	signInAsAnonymous: () => Promise<UserCredential>;
@@ -18,5 +18,6 @@ export interface IAuthProvider {
 	signOut: () => Promise<void>;
 	getOnAuthStateChanged: (cb: (user: User | null) => void) => Unsubscribe;
 	getCurrentUserAuth: () => Promise<User | null>;
+	updateUserAndTriggerStateChange: () => Promise<void>;
 	initialize: (auth: Auth, ops?: string) => void;
 }

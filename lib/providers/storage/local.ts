@@ -27,7 +27,7 @@ const generateUIDUsingCanvasID = (): string => {
 };
 
 export const Environment = Object.freeze({
-	applyEncryption: () => true,
+	applyEncryption: () => (import.meta.env.MODE === 'production' ? true : false),
 	bucketName: generateBucketNameUsingWebGlSignature()
 });
 

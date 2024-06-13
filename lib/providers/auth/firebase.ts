@@ -11,13 +11,15 @@ import {
 	signInAnonymously,
 	signOut as signOutFormFirebase,
 	Auth,
-	onAuthStateChanged as onAuthStateChangedFirebase,
+	// onAuthStateChanged as onAuthStateChangedFirebase,
 	User,
 	browserPopupRedirectResolver,
 	signInWithEmailAndPassword,
 	createUserWithEmailAndPassword,
 	sendEmailVerification,
-	getAdditionalUserInfo
+	getAdditionalUserInfo,
+	onIdTokenChanged
+	// updateCurrentUser,
 	// beforeAuthStateChanged,
 	// getAdditionalUserInfo
 } from 'firebase/auth';
@@ -27,7 +29,7 @@ import { Logger } from '../../utils';
 
 let auth!: Auth;
 
-const signinWithGoogle = async (privateKey?: string) => {
+const signinWithGoogle = async () => {
 	// Initialize Firebase Google Aut
 	const provider = new GoogleAuthProvider();
 	const credential = await signInWithPopup(
@@ -40,7 +42,7 @@ const signinWithGoogle = async (privateKey?: string) => {
 	}
 	// TODO: implement this
 	const { isNewUser } = getAdditionalUserInfo(credential) || {};
-	if (!isNewUser && !privateKey) {
+	if (!isNewUser) {
 		// await signOut();
 		// throw new Error(`auth/google-account-already-in-use`);
 	}
@@ -166,11 +168,21 @@ const initialize = (_auth: Auth) => {
 	// Object.freeze(auth);
 };
 
-const getOnAuthStateChanged = (cb: (user: User | null) => void) =>
-	onAuthStateChangedFirebase(auth, user => cb(user));
+const getOnAuthStateChanged = (cb: (user: User | null) => void) => {
+	return onIdTokenChanged(auth, user => cb(user));
+	// return onAuthStateChangedFirebase(auth, user => cb(user));
+};
 
 const getCurrentUserAuth = async () => {
 	return auth.currentUser;
+};
+
+const updateUserAndTriggerStateChange = async () => {
+	const user = auth.currentUser;
+	if (!user) {
+		throw new Error('User not found');
+	}
+	await user?.getIdToken(true);
 };
 
 const FirebaseAuthProvider: IAuthProvider = {
@@ -182,6 +194,7 @@ const FirebaseAuthProvider: IAuthProvider = {
 	signOut,
 	getOnAuthStateChanged,
 	getCurrentUserAuth,
+	updateUserAndTriggerStateChange,
 	initialize
 };
 
