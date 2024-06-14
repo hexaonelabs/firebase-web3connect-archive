@@ -13,7 +13,7 @@ import {
 	Auth,
 	// onAuthStateChanged as onAuthStateChangedFirebase,
 	User,
-	browserPopupRedirectResolver,
+	// browserPopupRedirectResolver,
 	signInWithEmailAndPassword,
 	createUserWithEmailAndPassword,
 	sendEmailVerification,
@@ -30,12 +30,12 @@ import { Logger } from '../../utils';
 let auth!: Auth;
 
 const signinWithGoogle = async () => {
-	// Initialize Firebase Google Aut
+	// Initialize Firebase Google Auth
 	const provider = new GoogleAuthProvider();
 	const credential = await signInWithPopup(
 		auth,
-		provider,
-		browserPopupRedirectResolver
+		provider
+		// browserPopupRedirectResolver
 	);
 	if (!credential) {
 		throw new Error('Credential not found');
