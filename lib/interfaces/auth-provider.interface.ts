@@ -7,7 +7,7 @@ type UserCredential = { user: User };
 
 export interface IAuthProvider {
 	signinWithGoogle: () => Promise<User>;
-	sendLinkToEmail: (email: string) => Promise<void>;
+	sendLinkToEmail: (email: string, ops?: { url?: string }) => Promise<void>;
 	signInWithLink: () => Promise<UserCredential | undefined>;
 	signInAsAnonymous: () => Promise<UserCredential>;
 	signInWithEmailPwd: (

@@ -124,7 +124,8 @@ export class FirebaseWeb3Connect {
 					? [authMethod, SigninMethod.Wallet]
 					: this._ops?.enabledSigninMethods,
 			integrator: this._ops?.dialogUI?.integrator,
-			logoUrl: this._ops?.dialogUI?.logoUrl
+			logoUrl: this._ops?.dialogUI?.logoUrl,
+			ops: this._ops?.dialogUI?.ops
 		});
 		// open modal
 		dialogElement.showModal();
@@ -208,7 +209,8 @@ export class FirebaseWeb3Connect {
 				isLightMode,
 				enabledSigninMethods: [SigninMethod.Wallet],
 				integrator: this._ops?.dialogUI?.integrator,
-				logoUrl: this._ops?.dialogUI?.logoUrl
+				logoUrl: this._ops?.dialogUI?.logoUrl,
+				ops: this._ops?.dialogUI?.ops
 			});
 			// remove all default login buttons
 			const btnsElement = dialogElement.shadowRoot?.querySelector(
@@ -280,7 +282,8 @@ export class FirebaseWeb3Connect {
 				isLightMode,
 				enabledSigninMethods: [SigninMethod.Wallet],
 				integrator: this._ops?.dialogUI?.integrator,
-				logoUrl: this._ops?.dialogUI?.logoUrl
+				logoUrl: this._ops?.dialogUI?.logoUrl,
+				ops: this._ops?.dialogUI?.ops
 			});
 			// remove all default login buttons
 			const btnsElement = dialogElement.shadowRoot?.querySelector(
@@ -491,10 +494,10 @@ export class FirebaseWeb3Connect {
 			dialogElement =
 				existingDialog ||
 				(await setupSigninDialogElement(document.body, {
-					// isLightMode: true,
 					enabledSigninMethods: [SigninMethod.Wallet],
 					integrator: this._ops?.dialogUI?.integrator,
-					logoUrl: this._ops?.dialogUI?.logoUrl
+					logoUrl: this._ops?.dialogUI?.logoUrl,
+					ops: this._ops?.dialogUI?.ops
 				}));
 			// remove all default login buttons if existing
 			const btnsElement = dialogElement.shadowRoot?.querySelector(
@@ -668,7 +671,6 @@ export class FirebaseWeb3Connect {
 
 	private async _displayVerifyEMailModal() {
 		const dialogElement = await setupSigninDialogElement(document.body, {
-			isLightMode: true,
 			enabledSigninMethods: [SigninMethod.Wallet],
 			integrator: this._ops?.dialogUI?.integrator,
 			logoUrl: this._ops?.dialogUI?.logoUrl

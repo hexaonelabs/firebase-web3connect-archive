@@ -112,9 +112,29 @@ export const authWithEmailPwd = async (ops: {
 	return result;
 };
 
-export const authWithEmailLink = async (ops: { email: string }) => {
-	const { email } = ops;
-	await authProvider.sendLinkToEmail(email);
+/**
+ *
+ * @param ops
+ * @returns
+ *
+ * 	Example:
+ * ```
+ * const origin = window.location.origin;
+ * const path = '/auth/link';
+ * const params = `/?${KEYS.URL_QUERYPARAM_FINISH_SIGNUP}=true`;
+ * const url = [origin, path, params].join('');
+ * await authWithEmailLink({ email: 'demo@demo.com', url });
+ *
+ * // this will send a link to the email with the url to finish the signup.
+ * // The user have to go to the url with the query param to finish the signup.
+ * ```
+ */
+export const authWithEmailLink = async (ops: {
+	email: string;
+	url?: string;
+}) => {
+	const { email, url } = ops;
+	await authProvider.sendLinkToEmail(email, { url });
 	return;
 };
 

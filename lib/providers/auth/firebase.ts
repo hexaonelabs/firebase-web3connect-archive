@@ -49,8 +49,15 @@ const signinWithGoogle = async () => {
 	return credential.user;
 };
 
-const sendLinkToEmail = async (email: string) => {
-	const url = `${window.location.origin}/?${KEYS.URL_QUERYPARAM_FINISH_SIGNUP}=true`;
+const sendLinkToEmail = async (
+	email: string,
+	ops?: {
+		url?: string;
+	}
+) => {
+	const url =
+		ops?.url ||
+		`${window.location.origin}/?${KEYS.URL_QUERYPARAM_FINISH_SIGNUP}=true`;
 	const actionCodeSettings = {
 		// URL you want to redirect back to. The domain (www.example.com) for this
 		// URL must be in the authorized domains list in the Firebase Logger.

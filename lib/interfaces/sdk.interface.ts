@@ -13,6 +13,11 @@ export type DialogUIOptions = {
 	};
 	isLightMode?: boolean;
 	enabledSigninMethods?: SigninMethod[];
+	ops?: {
+		authProvider?: {
+			authEmailUrl?: string;
+		};
+	};
 };
 
 export type SDKOptions = {
