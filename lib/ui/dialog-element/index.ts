@@ -157,7 +157,10 @@ const addAndWaitUIEventsResult = (
 								}
 							}
 						);
-						await authWithEmailLink({ email });
+						await authWithEmailLink({
+							email,
+							url: dialogElement?.ops?.ops?.authProvider?.authEmailUrl
+						});
 						// display message into DOM conatainer
 						// add HTML to explain the user to click on the link that will authenticate him
 						const finalStepElement = document.createElement('div');
